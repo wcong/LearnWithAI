@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LearnWithAI – AI 辅助深度学习</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<div class="app-container">
+    <!-- ====== 左侧：可折叠领域树 ====== -->
+    <aside class="area-tree-panel">
+        <div class="panel-header">
+            <h1>📚 学习领域</h1>
+            <p>管理你的知识领域</p>
+        </div>
+
+        <div class="list-toolbar">
+            <button id="btnNewRootArea">➕ 新建领域</button>
+        </div>
+
+        <div class="area-tree" id="areaTree"></div>
+    </aside>
+
+    <!-- ====== 右侧：聊天 ====== -->
+    <main class="chat-panel">
+        <div class="chat-area-info">
+            <div>
+                <div class="area-title" id="areaTitle">请选择一个领域</div>
+                <div class="area-desc" id="areaDesc">点击左侧领域列表开始学习</div>
+            </div>
+            <button class="add-sub-btn" id="addSubBtn" style="display:none">
+                ➕ 添加子领域
+            </button>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="empty-chat">
+                <div class="icon">🌱</div>
+                <p>选择一个学习领域，开启 AI 引导的深度学习之旅</p>
+            </div>
+        </div>
+
+        <div class="chat-input-area">
+            <textarea id="chatInput" rows="1"
+                      placeholder="选择左侧领域后开始提问..."
+                      disabled></textarea>
+            <button id="sendBtn" disabled>发送</button>
+        </div>
+    </main>
+</div>
+
+<!-- ====== 创建领域模态框 ====== -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+        <h2 id="modalTitle">创建学习领域</h2>
+        <div id="modalForm"></div>
+    </div>
+</div>
+
+<!-- ====== 响应详情弹窗 ====== -->
+<div class="response-overlay" id="responseOverlay">
+    <div class="response-modal">
+        <div class="response-header">
+            <span class="response-label" id="responseLabel">AI 回复详情</span>
+            <button class="response-close" id="btnCloseResponse">✕</button>
+        </div>
+        <div class="response-body" id="responseBody"></div>
+    </div>
+</div>
+
+<!-- marked (Markdown 解析) -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<!-- 应用脚本 -->
+<script src="/static/js/app.js"></script>
+</body>
+</html>
