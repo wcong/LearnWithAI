@@ -17,7 +17,9 @@ LearnWithAI – AI 辅助深度学习平台
 打开浏览器访问 http://127.0.0.1:7860
 """
 import logging
+import os
 import time
+from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI, Request
@@ -37,8 +39,19 @@ logging.basicConfig(
 logging.getLogger("uvicorn.access").disabled = True
 log = logging.getLogger("learnwithai")
 
+
+# ── 生命周期事件（必须在 FastAPI() 之前定义） ──
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """启动时初始化数据库，关闭时可做资源清理"""
+    init_db()
+    log.info("数据库初始化完成: %s", settings.DB_PATH)
+    yield
+    # 关闭时在此处添加清理逻辑（如关闭连接池）
+
+
 # 创建应用
-app = FastAPI(title=settings.PROJECT_NAME, description=settings.PROJECT_DESC)
+app = FastAPI(title=settings.PROJECT_NAME, description=settings.PROJECT_DESC, lifespan=lifespan)
 
 
 # ── 请求日志中间件 ─────────────────────────
@@ -88,23 +101,29 @@ async def root():
     return RedirectResponse(url="/static/index.html")
 
 
-@app.on_event("startup")
-def on_startup():
-    """启动时初始化数据库"""
-    init_db()
-    log.info("数据库初始化完成: %s", settings.DB_PATH)
-
-
 if __name__ == "__main__":
-    print(f"  🌳 LearnWithAI 启动中...")
-    print(f"  📡 访问地址: http://{settings.HOST}:{settings.PORT}")
-    print(f"  🤖 LLM 后端: {settings.LLM_PROVIDER} / {settings.LLM_MODEL}")
-    print(f"  💾 数据库:   {settings.DB_PATH}")
-    print()
-    uvicorn.run(
-        "main:app",
-        host=settings.HOST,
-        port=settings.PORT,
-        reload=True,
-        log_level="debug",
-    )
+    is_dev = os.getenv("ENV", "development").lower() in ("dev", "development", "local")
+    if is_dev:
+        print(f"  🌳 LearnWithAI 开发模式")
+        print(f"  📡 {settings.HOST}:{settings.PORT}")
+        print(f"  🤖 {settings.LLM_PROVIDER} / {settings.LLM_MODEL}")
+        print(f"  💾 {settings.DB_PATH}")
+        print()
+        uvicorn.run(
+            "main:app",
+            host=settings.HOST,
+            port=settings.PORT,
+            reload=True,
+            log_level="debug",
+        )
+    else:
+        # 生产模式：由 gunicorn 或 systemd 启动，不使用 reload
+        import uvicorn
+        uvicorn.run(
+            "main:app",
+            host=settings.HOST,
+            port=settings.PORT,
+            reload=False,
+            log_level="info",
+            workers=4,
+        )

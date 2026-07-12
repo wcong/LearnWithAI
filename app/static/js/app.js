@@ -113,32 +113,9 @@ function initAuth() {
 }
 
 function bootApp() {
-    // Quill
-    if (!quill) {
-        quill = new Quill('#noteEditor', {
-            theme: 'snow',
-            placeholder: '在此处记录学习笔记…',
-            modules: {
-                toolbar: [
-                    [{ header: [1,2,3,false] }],
-                    ['bold','italic','underline','strike'],
-                    [{ list: 'ordered' }, { list: 'bullet' }],
-                    [{ indent: '-1' }, { indent: '+1' }],
-                    [{ color: [] }, { background: [] }],
-                    ['blockquote','code-block'],
-                    [{ align: [] }],
-                    ['link'],
-                    ['clean'],
-                ],
-            },
-        });
-    }
-
-    // 笔记按钮
+    // ⚡ 先注册所有事件监听器（避免因第三方库初始化失败而阻断 UI）
     document.getElementById('btnEditNote').addEventListener('click', enterEditNote);
     document.getElementById('btnSaveNote').addEventListener('click', saveNote);
-
-    if (typeof marked !== 'undefined') marked.setOptions({ breaks: true, gfm: true });
 
     document.getElementById('btnNewRootArea').addEventListener('click', () => showCreateModal(null, ''));
     document.getElementById('sendBtn').addEventListener('click', sendMessage);
@@ -152,6 +129,31 @@ function bootApp() {
     document.getElementById('responseOverlay').addEventListener('click', (e) => {
         if (e.target === e.currentTarget) closeResponseModal();
     });
+
+    // Quill 编辑器初始化（放在事件绑定之后，即使失败也不影响 UI 交互）
+    if (!quill) {
+        try {
+            quill = new Quill('#noteEditor', {
+                theme: 'snow',
+                placeholder: '在此处记录学习笔记…',
+                modules: {
+                    toolbar: [
+                        [{ header: [1,2,3,false] }],
+                        ['bold','italic','underline','strike'],
+                        [{ list: 'ordered' }, { list: 'bullet' }],
+                        [{ indent: '-1' }, { indent: '+1' }],
+                        [{ color: [] }, { background: [] }],
+                        ['blockquote','code-block'],
+                        [{ align: [] }],
+                        ['link'],
+                        ['clean'],
+                    ],
+                },
+            });
+        } catch (e) {
+            console.warn('Quill 编辑器初始化失败，笔记功能暂不可用', e);
+        }
+    }
 
     loadData();
 }
@@ -378,7 +380,17 @@ function appendMessage(role, content, msgId) {
     const div = document.createElement('div');
     div.className = `message ${role}`;
     if (role === 'assistant') {
-        div.innerHTML = (typeof marked !== 'undefined' ? marked.parse(content) : content)
+        // Markdown -> HTML 解析（带容错）
+        let html;
+        try {
+            html = (typeof marked !== 'undefined')
+                ? marked.parse(content, { breaks: true, gfm: true })
+                : content;
+        } catch (e) {
+            console.warn('marked.parse 失败，使用纯文本降级', e);
+            html = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+        div.innerHTML = html
             + '<span class="click-hint">👆 点击展开详情</span>'
             + '<button class="msg-sub-btn">➕ 添加子领域</button>';
         div.querySelector('.click-hint').addEventListener('click', (e) => {
@@ -418,7 +430,15 @@ function buildUsageHtml(usage) {
 
 async function showResponseModal(content, msgId) {
     document.getElementById('responseLabel').textContent = `AI 回复详情 · ${selectedAreaName}`;
-    let html = typeof marked !== 'undefined' ? marked.parse(content) : content;
+    let html;
+    try {
+        html = (typeof marked !== 'undefined')
+            ? marked.parse(content, { breaks: true, gfm: true })
+            : content;
+    } catch (e) {
+        console.warn('marked.parse 失败', e);
+        html = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
     if (msgId) { try { html += buildUsageHtml(await api(`/chat/usage/${msgId}`)); } catch {} }
     document.getElementById('responseBody').innerHTML = html;
     document.getElementById('responseOverlay').classList.add('active');
