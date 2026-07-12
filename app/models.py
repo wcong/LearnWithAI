@@ -7,16 +7,35 @@ from sqlalchemy.orm import relationship, backref
 from app.database import Base
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    username = Column(String(100), unique=True, nullable=False, index=True)
+    password_hash = Column(String(256), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    areas = relationship("Area", back_populates="user", cascade="all, delete-orphan")
+
+    def to_dict(self) -> dict:
+        return {"id": self.id, "username": self.username,
+                "created_at": self.created_at.isoformat() if self.created_at else None}
+
+
 class Area(Base):
     __tablename__ = "areas"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     name = Column(String(200), nullable=False, index=True)
     description = Column(Text, default="")
     parent_id = Column(Integer, ForeignKey("areas.id"), nullable=True)
     order = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # 用户
+    user = relationship("User", back_populates="areas")
 
     # 树关系（自引用：remote_side 放在 parent 侧）
     parent = relationship("Area", remote_side=[id],
@@ -61,6 +80,26 @@ class ChatMessage(Base):
             "role": self.role,
             "content": self.content,
             "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class AreaNote(Base):
+    """学习笔记（每个 Area 一条，富文本 HTML 格式）"""
+    __tablename__ = "area_notes"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    area_id = Column(Integer, ForeignKey("areas.id"), nullable=False, unique=True, index=True)
+    content = Column(Text, default="")  # HTML 格式
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    area = relationship("Area", backref=backref("note", uselist=False, cascade="all, delete-orphan"))
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "area_id": self.area_id,
+            "content": self.content,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 
 

@@ -3,8 +3,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_user
 from app.database import get_db
-from app.models import Area, ChatMessage, LearningSession, UsageLog
+from app.models import Area, ChatMessage, LearningSession, UsageLog, User
 from app.agents.learning_agent import LearningAgent
 
 router = APIRouter(prefix="/api/chat", tags=["Chat"])
@@ -45,10 +46,11 @@ def get_chain_messages(db: Session, area_id: int) -> list[dict]:
 
 
 @router.post("", response_model=ChatResponse)
-async def chat(req: ChatRequest, db: Session = Depends(get_db)):
+async def chat(req: ChatRequest, db: Session = Depends(get_db),
+               user: User = Depends(get_current_user)):
     """与某个领域的 AI 导师对话（包含祖先领域的历史作为上下文）"""
     area = db.query(Area).get(req.area_id)
-    if not area:
+    if not area or area.user_id != user.id:
         raise HTTPException(404, "学习领域不存在")
 
     # 获取或创建 agent
@@ -93,17 +95,28 @@ async def chat(req: ChatRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/usage/{message_id}")
-def get_usage(message_id: int, db: Session = Depends(get_db)):
+def get_usage(message_id: int, db: Session = Depends(get_db),
+              user: User = Depends(get_current_user)):
     """获取某条 AI 回复的用量数据"""
     usage = db.query(UsageLog).filter(UsageLog.message_id == message_id).first()
     if not usage:
         return None
+    # 验证消息所属 area 属于当前用户
+    msg = db.query(ChatMessage).get(message_id)
+    if msg:
+        area = db.query(Area).get(msg.area_id)
+        if area and area.user_id != user.id:
+            return None
     return usage.to_dict()
 
 
 @router.get("/history/{area_id}")
-def get_history(area_id: int, db: Session = Depends(get_db)):
+def get_history(area_id: int, db: Session = Depends(get_db),
+                user: User = Depends(get_current_user)):
     """获取该领域及其所有祖先领域的对话历史（按时间排序）"""
+    area = db.query(Area).get(area_id)
+    if not area or area.user_id != user.id:
+        raise HTTPException(404, "学习领域不存在")
     return get_chain_messages(db, area_id)
 
 

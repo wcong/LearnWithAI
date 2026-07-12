@@ -4,54 +4,91 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LearnWithAI – AI 辅助深度学习</title>
+    <!-- Quill.js 富文本编辑器 -->
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
 
-<div class="app-container">
-    <!-- ====== 左侧：可折叠领域树 ====== -->
+<!-- ====== 登录页 ====== -->
+<div class="auth-page" id="authPage">
+    <div class="auth-card">
+        <div class="auth-logo">🌳</div>
+        <h1>LearnWithAI</h1>
+        <p class="auth-sub">AI 辅助深度学习平台</p>
+        <div class="auth-tabs">
+            <button class="auth-tab active" id="tabLogin">登录</button>
+            <button class="auth-tab" id="tabRegister">注册</button>
+        </div>
+        <form id="authForm" onsubmit="return false;">
+            <label>用户名</label>
+            <input type="text" id="authUsername" placeholder="输入用户名" required autocomplete="username">
+            <label>密码</label>
+            <input type="password" id="authPassword" placeholder="输入密码" required autocomplete="current-password">
+            <p class="auth-error" id="authError"></p>
+            <button type="submit" class="auth-btn" id="authBtn">登录</button>
+        </form>
+    </div>
+</div>
+
+<!-- ====== 主应用（三栏） ====== -->
+<div class="app-container" id="appContainer" style="display:none;">
+    <!-- 左栏：领域树 -->
     <aside class="area-tree-panel">
         <div class="panel-header">
-            <h1>📚 学习领域</h1>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <h1>📚 学习领域</h1>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="username-badge" id="usernameBadge"></span>
+                    <button class="logout-btn" id="logoutBtn" title="退出登录">🚪</button>
+                </div>
+            </div>
             <p>管理你的知识领域</p>
         </div>
-
         <div class="list-toolbar">
             <button id="btnNewRootArea">➕ 新建领域</button>
         </div>
-
         <div class="area-tree" id="areaTree"></div>
     </aside>
 
-    <!-- ====== 右侧：聊天 ====== -->
+    <!-- 中栏：学习笔记 -->
+    <main class="note-panel">
+        <div class="note-header">
+            <div>
+                <span class="note-title" id="noteTitle">📝 学习笔记</span>
+                <span class="note-status" id="noteStatus"></span>
+            </div>
+            <div style="display:flex;gap:6px;">
+                <button class="note-btn" id="btnEditNote" style="display:none;">✏️ 编辑</button>
+                <button class="note-btn note-btn-primary" id="btnSaveNote" style="display:none;">💾 保存</button>
+            </div>
+        </div>
+        <div class="note-view" id="noteView"></div>
+        <div class="note-editor" id="noteEditor" style="display:none;"></div>
+    </main>
+
+    <!-- 右栏：聊天 -->
     <main class="chat-panel">
         <div class="chat-area-info">
             <div>
                 <div class="area-title" id="areaTitle">请选择一个领域</div>
                 <div class="area-desc" id="areaDesc">点击左侧领域列表开始学习</div>
             </div>
-            <button class="add-sub-btn" id="addSubBtn" style="display:none">
-                ➕ 添加子领域
-            </button>
         </div>
-
         <div class="chat-messages" id="chatMessages">
             <div class="empty-chat">
                 <div class="icon">🌱</div>
                 <p>选择一个学习领域，开启 AI 引导的深度学习之旅</p>
             </div>
         </div>
-
         <div class="chat-input-area">
-            <textarea id="chatInput" rows="1"
-                      placeholder="选择左侧领域后开始提问..."
-                      disabled></textarea>
+            <textarea id="chatInput" rows="1" placeholder="选择左侧领域后开始提问..." disabled></textarea>
             <button id="sendBtn" disabled>发送</button>
         </div>
     </main>
 </div>
 
-<!-- ====== 创建领域模态框 ====== -->
+<!-- ====== 模态框 ====== -->
 <div class="modal-overlay" id="modalOverlay">
     <div class="modal-box">
         <h2 id="modalTitle">创建学习领域</h2>
@@ -59,7 +96,6 @@
     </div>
 </div>
 
-<!-- ====== 响应详情弹窗 ====== -->
 <div class="response-overlay" id="responseOverlay">
     <div class="response-modal">
         <div class="response-header">
@@ -70,9 +106,9 @@
     </div>
 </div>
 
-<!-- marked (Markdown 解析) -->
+<!-- CDN -->
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<!-- 应用脚本 -->
 <script src="/static/js/app.js"></script>
 </body>
 </html>

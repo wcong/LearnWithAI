@@ -1,7 +1,7 @@
 """SQLite 数据库引擎 & 会话管理"""
 from pathlib import Path
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 from app.config import settings
@@ -21,9 +21,17 @@ Base = declarative_base()
 
 
 def init_db():
-    """创建所有表"""
-    from app.models import Area, ChatMessage, LearningSession  # noqa: F401
+    """创建所有表，并自动迁移旧的 areas 表（补充 user_id 列）"""
+    from app.models import Area, ChatMessage, LearningSession, UsageLog, User  # noqa: F401
     Base.metadata.create_all(bind=engine)
+
+    # 迁移：旧版 areas 表缺少 user_id 列
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE areas ADD COLUMN user_id INTEGER REFERENCES users(id)"))
+            conn.commit()
+    except Exception:
+        pass  # 列已存在则忽略
 
 
 def get_db():

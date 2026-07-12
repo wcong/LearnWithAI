@@ -22,6 +22,11 @@ class Settings:
     LLM_API_BASE = os.getenv("LLM_API_BASE", "")
     LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.7"))
 
+    # JWT
+    JWT_SECRET = os.getenv("JWT_SECRET", "learnwithai-dev-secret-change-in-prod")
+    JWT_ALGORITHM = "HS256"
+    JWT_EXPIRE_HOURS = 72
+
     # 服务
     HOST = os.getenv("HOST", "127.0.0.1")
     PORT = int(os.getenv("PORT", "7860"))
