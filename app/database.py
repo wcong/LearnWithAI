@@ -22,7 +22,7 @@ Base = declarative_base()
 
 def init_db():
     """创建所有表，并自动迁移旧的 areas 表（补充 user_id 列）"""
-    from app.models import Area, ChatMessage, LearningSession, UsageLog, User  # noqa: F401
+    from app.models import Area, ChatMessage, LearningSession, UsageLog, User, NoteEmbedding  # noqa: F401
     Base.metadata.create_all(bind=engine)
 
     # 迁移：旧版 areas 表缺少 user_id 列

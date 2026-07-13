@@ -1,4 +1,6 @@
 """学习笔记路由（每个 Area 一条富文本笔记）"""
+import threading
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -6,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.auth import get_current_user
 from app.database import get_db
 from app.models import Area, AreaNote, User
+from app.rag.rag_engine import engine as rag_engine
 
 router = APIRouter(prefix="/api/notes", tags=["Notes"])
 
@@ -41,4 +44,12 @@ def save_note(area_id: int, body: NoteBody, db: Session = Depends(get_db),
         db.add(note)
     db.commit()
     db.refresh(note)
+
+    # 后台重建 RAG 索引（不阻塞响应）
+    threading.Thread(
+        target=rag_engine.rebuild_area_index,
+        args=(area_id,),
+        daemon=True,
+    ).start()
+
     return note.to_dict()

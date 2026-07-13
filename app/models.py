@@ -1,7 +1,7 @@
 """数据模型"""
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, LargeBinary
 from sqlalchemy.orm import relationship, backref
 
 from app.database import Base
@@ -99,6 +99,27 @@ class AreaNote(Base):
             "id": self.id,
             "area_id": self.area_id,
             "content": self.content,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class NoteEmbedding(Base):
+    """笔记向量分块（RAG 索引，每次笔记保存后重建）"""
+    __tablename__ = "note_embeddings"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    area_id = Column(Integer, ForeignKey("areas.id"), nullable=False, index=True)
+    chunk_text = Column(Text, nullable=False)
+    embedding = Column(LargeBinary, nullable=True)  # numpy float32 序列化
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    area = relationship("Area")
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "area_id": self.area_id,
+            "chunk_text": self.chunk_text,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
 

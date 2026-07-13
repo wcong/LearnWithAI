@@ -47,6 +47,7 @@
         </div>
         <div class="list-toolbar">
             <button id="btnNewRootArea">➕ 新建领域</button>
+            <button id="btnRagSearch">🔍 搜索笔记</button>
         </div>
         <div class="area-tree" id="areaTree"></div>
     </aside>
@@ -103,6 +104,25 @@
             <button class="response-close" id="btnCloseResponse">✕</button>
         </div>
         <div class="response-body" id="responseBody"></div>
+    </div>
+</div>
+
+<!-- ====== RAG 搜索弹窗 ====== -->
+<div class="rag-search-overlay" id="ragSearchOverlay">
+    <div class="rag-search-modal">
+        <div class="rag-search-header">
+            <span class="rag-search-label">🔍 RAG 笔记搜索</span>
+            <button class="rag-search-close" id="btnCloseRagSearch">✕</button>
+        </div>
+        <div class="rag-search-body">
+            <div class="rag-search-input-row">
+                <input type="text" id="ragSearchInput" placeholder="输入关键词搜索你的笔记..." autofocus>
+                <button id="btnSubmitRagSearch">搜索</button>
+            </div>
+            <div class="rag-search-results" id="ragSearchResults">
+                <div class="rag-search-empty">输入查询内容后点击"搜索"</div>
+            </div>
+        </div>
     </div>
 </div>
 

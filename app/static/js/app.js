@@ -118,6 +118,7 @@ function bootApp() {
     document.getElementById('btnSaveNote').addEventListener('click', saveNote);
 
     document.getElementById('btnNewRootArea').addEventListener('click', () => showCreateModal(null, ''));
+    document.getElementById('btnRagSearch').addEventListener('click', showRagSearchModal);
     document.getElementById('sendBtn').addEventListener('click', sendMessage);
     document.getElementById('chatInput').addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -128,6 +129,14 @@ function bootApp() {
     document.getElementById('btnCloseResponse').addEventListener('click', closeResponseModal);
     document.getElementById('responseOverlay').addEventListener('click', (e) => {
         if (e.target === e.currentTarget) closeResponseModal();
+    });
+    document.getElementById('btnCloseRagSearch').addEventListener('click', closeRagSearchModal);
+    document.getElementById('ragSearchOverlay').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeRagSearchModal();
+    });
+    document.getElementById('btnSubmitRagSearch').addEventListener('click', submitRagSearch);
+    document.getElementById('ragSearchInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); submitRagSearch(); }
     });
 
     // Quill 编辑器初始化（放在事件绑定之后，即使失败也不影响 UI 交互）
@@ -484,6 +493,104 @@ async function submitCreate() {
         await loadData();
     } catch (err) { alert('创建失败：' + err.message); }
 }
+
+// ============================================================
+//  RAG 搜索
+// ============================================================
+
+let _ragSearching = false;
+
+function showRagSearchModal() {
+    document.getElementById('ragSearchOverlay').classList.add('active');
+    document.getElementById('ragSearchInput').value = '';
+    document.getElementById('ragSearchResults').innerHTML =
+        '<div class="rag-search-empty">输入查询内容后点击"搜索"</div>';
+    setTimeout(() => document.getElementById('ragSearchInput')?.focus(), 100);
+}
+
+function closeRagSearchModal() {
+    document.getElementById('ragSearchOverlay').classList.remove('active');
+}
+
+async function submitRagSearch() {
+    const query = document.getElementById('ragSearchInput').value.trim();
+    if (!query || _ragSearching) return;
+
+    _ragSearching = true;
+    const btn = document.getElementById('btnSubmitRagSearch');
+    btn.disabled = true;
+    btn.textContent = '搜索中...';
+    document.getElementById('ragSearchResults').innerHTML =
+        '<div class="rag-search-empty" style="color:#909399;">🔍 正在搜索...</div>';
+
+    try {
+        const data = await api('/rag/search', {
+            method: 'POST',
+            body: { query, top_k: 10 },
+        });
+        renderRagResults(data.results || [], query);
+    } catch (err) {
+        document.getElementById('ragSearchResults').innerHTML =
+            `<div class="rag-search-empty" style="color:#ef4444;">⚠️ 搜索失败：${escHtml(err.message)}</div>`;
+    } finally {
+        _ragSearching = false;
+        btn.disabled = false;
+        btn.textContent = '搜索';
+    }
+}
+
+function renderRagResults(results, query) {
+    const container = document.getElementById('ragSearchResults');
+    if (results.length === 0) {
+        container.innerHTML = '<div class="rag-search-empty">未找到匹配结果，试试其他关键词</div>';
+        return;
+    }
+
+    let html = `<div class="rag-result-count">共找到 ${results.length} 条相关结果</div>`;
+    results.forEach((r, i) => {
+        const highlighted = highlightText(escHtml(r.snippet), escHtml(query));
+        html += `
+            <div class="rag-result-item">
+                <div class="rag-result-index">${i + 1}</div>
+                <div class="rag-result-content">
+                    <a class="rag-result-link" data-area-id="${r.area_id}">${escHtml(r.area_name)}</a>
+                    <div class="rag-result-snippet">${highlighted}</div>
+                    <div class="rag-result-score">相关度：${(r.score * 100).toFixed(0)}%</div>
+                </div>
+            </div>`;
+    });
+    container.innerHTML = html;
+
+    // 绑定点击跳转
+    container.querySelectorAll('.rag-result-link').forEach(el => {
+        el.addEventListener('click', (e) => {
+            e.preventDefault();
+            const areaId = parseInt(el.dataset.areaId, 10);
+            const node = findNodeById(treeData, areaId);
+            if (node) {
+                closeRagSearchModal();
+                selectArea(node);
+            } else {
+                alert('该领域可能已被删除');
+            }
+        });
+    });
+}
+
+function highlightText(text, query) {
+    // 简单关键词高亮
+    const terms = query.split(/\s+/).filter(Boolean);
+    if (terms.length === 0) return text;
+    let result = text;
+    for (const term of terms) {
+        try {
+            const re = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            result = result.replace(re, '<mark class="rag-highlight">$1</mark>');
+        } catch { /* ignore invalid regex */ }
+    }
+    return result;
+}
+
 
 // ============================================================
 //  Boot
