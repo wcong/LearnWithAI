@@ -40,6 +40,7 @@
                 <h1>📚 学习领域</h1>
                 <div style="display:flex;align-items:center;gap:8px;">
                     <span class="username-badge" id="usernameBadge"></span>
+                    <button class="icon-btn" id="btnAdmin" title="管理员面板">📊</button>
                     <button class="logout-btn" id="logoutBtn" title="退出登录">🚪</button>
                 </div>
             </div>
@@ -122,6 +123,22 @@
             <div class="rag-search-results" id="ragSearchResults">
                 <div class="rag-search-empty">输入查询内容后点击"搜索"</div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====== Admin 统计面板 ====== -->
+<div class="admin-overlay" id="adminOverlay">
+    <div class="admin-modal">
+        <div class="admin-header">
+            <span class="admin-label">📊 管理统计面板</span>
+            <div class="admin-header-actions">
+                <button class="admin-refresh-btn" id="btnAdminRefresh">🔄 刷新</button>
+                <button class="admin-close" id="btnCloseAdmin">✕</button>
+            </div>
+        </div>
+        <div class="admin-body" id="adminBody">
+            <div class="admin-loading">加载中...</div>
         </div>
     </div>
 </div>

@@ -32,5 +32,8 @@ class Settings:
     HOST = os.getenv("HOST", "127.0.0.1")
     PORT = int(os.getenv("PORT", "7860"))
 
+    # 管理员
+    ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+
 
 settings = Settings()

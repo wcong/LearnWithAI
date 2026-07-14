@@ -139,6 +139,14 @@ function bootApp() {
         if (e.key === 'Enter') { e.preventDefault(); submitRagSearch(); }
     });
 
+    // Admin
+    document.getElementById('btnAdmin').addEventListener('click', showAdminPanel);
+    document.getElementById('btnCloseAdmin').addEventListener('click', closeAdminPanel);
+    document.getElementById('adminOverlay').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeAdminPanel();
+    });
+    document.getElementById('btnAdminRefresh').addEventListener('click', loadAdminStats);
+
     // Quill 编辑器初始化（放在事件绑定之后，即使失败也不影响 UI 交互）
     if (!quill) {
         try {
@@ -589,6 +597,71 @@ function highlightText(text, query) {
         } catch { /* ignore invalid regex */ }
     }
     return result;
+}
+
+
+// ============================================================
+//  Admin 统计面板
+// ============================================================
+
+function showAdminPanel() {
+    document.getElementById('adminOverlay').classList.add('active');
+    document.getElementById('adminBody').innerHTML = '<div class="admin-loading">加载中...</div>';
+    loadAdminStats();
+}
+
+function closeAdminPanel() {
+    document.getElementById('adminOverlay').classList.remove('active');
+}
+
+async function loadAdminStats() {
+    const body = document.getElementById('adminBody');
+    body.innerHTML = '<div class="admin-loading">加载中...</div>';
+    try {
+        const data = await api('/admin/stats');
+        renderAdminStats(data, body);
+    } catch (err) {
+        body.innerHTML = `<div class="admin-loading" style="color:#ef4444;">⚠️ 加载失败：${escHtml(err.message)}</div>`;
+    }
+}
+
+function renderAdminStats(data, body) {
+    const s = data.summary;
+    const users = data.users;
+
+    // 全局汇总卡片
+    let html = `
+        <div class="admin-summary">
+            <div class="admin-card"><div class="admin-card-value">${s.total_users}</div><div class="admin-card-label">用户</div></div>
+            <div class="admin-card"><div class="admin-card-value">${s.total_areas}</div><div class="admin-card-label">领域</div></div>
+            <div class="admin-card"><div class="admin-card-value">${s.total_messages.toLocaleString()}</div><div class="admin-card-label">消息</div></div>
+            <div class="admin-card"><div class="admin-card-value">${s.total_prompt_tokens.toLocaleString()}</div><div class="admin-card-label">输入 Token</div></div>
+            <div class="admin-card"><div class="admin-card-value">${s.total_completion_tokens.toLocaleString()}</div><div class="admin-card-label">输出 Token</div></div>
+            <div class="admin-card admin-card-primary"><div class="admin-card-value">${s.total_tokens.toLocaleString()}</div><div class="admin-card-label">总计 Token</div></div>
+        </div>
+    `;
+
+    if (users.length === 0) {
+        html += '<div class="admin-empty">暂无用户数据</div>';
+    } else {
+        // 每个用户的表格
+        html += '<table class="admin-table"><thead><tr>' +
+            '<th>用户</th><th>领域数</th><th>消息数</th><th>输入 Token</th><th>输出 Token</th><th>总计 Token</th>' +
+            '</tr></thead><tbody>';
+        users.forEach(u => {
+            html += `<tr>
+                <td><strong>${escHtml(u.username)}</strong></td>
+                <td>${u.area_count}</td>
+                <td>${u.message_count.toLocaleString()}</td>
+                <td>${u.prompt_tokens.toLocaleString()}</td>
+                <td>${u.completion_tokens.toLocaleString()}</td>
+                <td><strong>${u.total_tokens.toLocaleString()}</strong></td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+    }
+
+    body.innerHTML = html;
 }
 
 
