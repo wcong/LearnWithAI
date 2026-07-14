@@ -14,6 +14,7 @@ class Settings:
 
     # 数据库
     DB_PATH = Path(__file__).resolve().parent.parent / "data" / "learn.db"
+    DATABASE_URL = os.getenv("DATABASE_URL", "")  # 设置此项则覆盖 DB_PATH，例如 mysql+pymysql://user:pass@host/dbname
 
     # LLM 配置（可通过环境变量覆盖）
     LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai")  # openai / anthropic / ollama

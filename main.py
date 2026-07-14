@@ -26,7 +26,7 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
-from app.database import init_db
+from app.database import init_db, get_db_type
 from app.routes import areas, chat, auth, notes, rag
 
 # ── 日志配置 ──────────────────────────────
@@ -45,7 +45,11 @@ log = logging.getLogger("learnwithai")
 async def lifespan(app: FastAPI):
     """启动时初始化数据库，关闭时可做资源清理"""
     init_db()
-    log.info("数据库初始化完成: %s", settings.DB_PATH)
+    db_type = get_db_type()
+    if db_type == "SQLite":
+        log.info("数据库初始化完成 [%s]: %s", db_type, settings.DB_PATH)
+    else:
+        log.info("数据库初始化完成 [%s]", db_type)
     yield
     # 关闭时在此处添加清理逻辑（如关闭连接池）
 
@@ -108,7 +112,7 @@ if __name__ == "__main__":
         print(f"  🌳 LearnWithAI 开发模式")
         print(f"  📡 {settings.HOST}:{settings.PORT}")
         print(f"  🤖 {settings.LLM_PROVIDER} / {settings.LLM_MODEL}")
-        print(f"  💾 {settings.DB_PATH}")
+        print(f"  💾 {get_db_type()}: {settings.DB_PATH if get_db_type() == 'SQLite' else settings.DATABASE_URL or settings.DB_PATH}")
         print()
         uvicorn.run(
             "main:app",

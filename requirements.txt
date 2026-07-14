@@ -20,6 +20,9 @@ uvicorn[standard]>=0.51.0
 # 数据库
 sqlalchemy>=2.0.51
 
+# MySQL 支持（可选，使用 MySQL 时安装）
+pymysql>=1.1.0
+
 # 模板 / 文件服务
 jinja2>=3.1.6
 aiofiles>=25.1.0
