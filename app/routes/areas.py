@@ -10,7 +10,12 @@ from sqlalchemy.orm import Session
 from app.auth import get_current_user
 from app.database import get_db
 from app.models import Area, AreaAnalysis, User
-from app.agents.learning_agent import run_examine_agent, run_examine_agent_stream
+from app.agents.learning_agent import (
+    run_examine_agent,
+    run_examine_agent_stream,
+    run_generate_subareas_stream,
+    run_polish_subareas,
+)
 from app.agents.streaming_handler import StreamingCallbackHandler
 
 router = APIRouter(prefix="/api/areas", tags=["Learning Areas"])
@@ -233,3 +238,108 @@ async def _run_streaming_examine(area_id: int, area_name: str,
     """执行流式审查，返回 analysis dict"""
     result = await run_examine_agent_stream(area_id, area_name, callback_handler)
     return result.get("analysis", {}) or {"error": "审查失败"}
+
+
+# -----------------------------------------------------------
+#  生成子领域建议 (流式)
+# -----------------------------------------------------------
+class PolishSubareasRequest(BaseModel):
+    sub_areas: list[dict]
+
+
+@router.post("/{area_id}/generate-subareas/stream")
+async def generate_subareas_stream(area_id: int, db: Session = Depends(get_db),
+                                    user: User = Depends(get_current_user)):
+    """基于聊天记录生成子领域建议 - SSE 流式"""
+    area = db.query(Area).get(area_id)
+    if not area:
+        raise HTTPException(404, "学习领域不存在")
+    _assert_owner(area, user)
+
+    queue: asyncio.Queue = asyncio.Queue()
+    callback_handler = StreamingCallbackHandler(queue)
+
+    async def event_generator():
+        agent_task = asyncio.create_task(
+            _run_streaming_generate(area_id, area.name, area.description,
+                                     callback_handler, queue)
+        )
+
+        while True:
+            get_task = asyncio.create_task(queue.get())
+            done_set, _ = await asyncio.wait(
+                [get_task, agent_task],
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+
+            if agent_task in done_set:
+                get_task.cancel()
+                break
+
+            event_type, data = get_task.result()
+            if event_type == "error":
+                yield f"event: error\ndata: {json.dumps({'detail': data})}\n\n"
+                break
+            elif event_type == "thinking":
+                yield f"event: thinking\ndata: {json.dumps({'chunk': data})}\n\n"
+            elif event_type == "tool_call":
+                yield f"event: tool_call\ndata: {json.dumps({'chunk': data})}\n\n"
+
+        while not queue.empty():
+            try:
+                event_type, data = queue.get_nowait()
+                if event_type == "thinking":
+                    yield f"event: thinking\ndata: {json.dumps({'chunk': data})}\n\n"
+                elif event_type == "tool_call":
+                    yield f"event: tool_call\ndata: {json.dumps({'chunk': data})}\n\n"
+                elif event_type == "error":
+                    yield f"event: error\ndata: {json.dumps({'detail': data})}\n\n"
+            except asyncio.QueueEmpty:
+                break
+
+        try:
+            result = await agent_task
+            yield f"event: result\ndata: {json.dumps(result)}\n\n"
+        except Exception as e:
+            yield f"event: error\ndata: {json.dumps({'detail': str(e)})}\n\n"
+        yield "event: done\ndata: {}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+async def _run_streaming_generate(area_id: int, area_name: str, area_description: str,
+                                   callback_handler: StreamingCallbackHandler,
+                                   queue: asyncio.Queue) -> dict:
+    """执行流式生成子领域建议"""
+    result = await run_generate_subareas_stream(
+        area_id, area_name, area_description, callback_handler
+    )
+    return result if result else {"error": "生成失败"}
+
+
+# -----------------------------------------------------------
+#  润色子领域描述
+# -----------------------------------------------------------
+@router.post("/{area_id}/polish-subareas")
+async def polish_subareas(area_id: int, body: PolishSubareasRequest,
+                          db: Session = Depends(get_db),
+                          user: User = Depends(get_current_user)):
+    """润色子领域描述：不改变标题和数量，只优化描述"""
+    area = db.query(Area).get(area_id)
+    if not area:
+        raise HTTPException(404, "学习领域不存在")
+    _assert_owner(area, user)
+
+    if not body.sub_areas:
+        raise HTTPException(400, "子领域列表不能为空")
+
+    polished = await run_polish_subareas(body.sub_areas)
+    return {"sub_areas": polished}

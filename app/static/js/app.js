@@ -288,6 +288,12 @@ function bootApp() {
         if (e.target === e.currentTarget) closeExamineModal();
     });
 
+    // Generate subareas modal
+    document.getElementById('btnCloseGen').addEventListener('click', closeGenModal);
+    document.getElementById('genOverlay').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeGenModal();
+    });
+
     // Quill 编辑器初始化（放在事件绑定之后，即使失败也不影响 UI 交互）
     if (!quill) {
         try {
@@ -731,13 +737,20 @@ function appendMessage(role, content, msgId) {
         }
         div.innerHTML = html
             + '<span class="click-hint">👆 点击展开详情</span>'
-            + '<button class="msg-sub-btn">➕ 添加子领域</button>';
+            + '<div class="msg-actions">'
+            + '<button class="msg-sub-btn">➕ 添加子领域</button>'
+            + '<button class="msg-gen-btn">✨ 生成子领域</button>'
+            + '</div>';
         div.querySelector('.click-hint').addEventListener('click', (e) => {
             e.stopPropagation(); showResponseModal(content, msgId);
         });
         div.querySelector('.msg-sub-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             if (selectedAreaId) showCreateModal(selectedAreaId, selectedAreaName);
+        });
+        div.querySelector('.msg-gen-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (selectedAreaId) generateSubareas(selectedAreaId);
         });
     } else {
         div.textContent = content;
@@ -1041,6 +1054,298 @@ function renderAdminStats(data, body) {
     }
 
     body.innerHTML = html;
+}
+
+
+// ============================================================
+//  生成子领域
+// ============================================================
+
+let _genSubareasData = null;  // 缓存当前生成的数据
+
+function closeGenModal() {
+    document.getElementById('genOverlay').classList.remove('active');
+    _genSubareasData = null;
+}
+
+function showGenLoading() {
+    document.getElementById('genBody').innerHTML = `
+        <div class="gen-thinking-container">
+            <div class="gen-thinking-content" id="genThinkingContent"><span class="gen-thinking-cursor"></span></div>
+        </div>
+        <div class="gen-loading" style="padding:20px 0;">⏳ AI 正在思考...</div>`;
+}
+
+function updateGenThinking(chunk) {
+    const el = document.getElementById('genThinkingContent');
+    if (!el) return;
+    const text = el.textContent || el.innerText || '';
+    el.innerHTML = escHtml(text + chunk).replace(/\n/g, '<br>') + '<span class="gen-thinking-cursor"></span>';
+    const container = document.querySelector('.gen-thinking-container');
+    if (container) container.scrollTop = container.scrollHeight;
+}
+
+function appendGenToolCall(chunk) {
+    const el = document.getElementById('genThinkingContent');
+    if (el) el.innerHTML += `<span style="color:#6366f1;font-weight:500;">🔧 ${escHtml(chunk)}</span><br>`;
+}
+
+async function generateSubareas(areaId) {
+    const overlay = document.getElementById('genOverlay');
+    overlay.classList.add('active');
+    showGenLoading();
+
+    try {
+        const res = await fetch(`/api/areas/${areaId}/generate-subareas/stream`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            },
+        });
+
+        if (!res.ok) {
+            if (res.status === 401) { logout(); throw new Error('登录已过期'); }
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || `请求失败 (${res.status})`);
+        }
+
+        let resultData = null;
+
+        await readSSEStream(res, {
+            thinking: (data) => { if (data.chunk) updateGenThinking(data.chunk); },
+            tool_call: (data) => { if (data.chunk) appendGenToolCall(data.chunk); },
+            result: (data) => { resultData = data; },
+            error: (data) => { throw new Error(data.detail || 'AI 处理出错'); },
+        });
+
+        if (resultData) {
+            _genSubareasData = resultData;
+            showGenerateSubareaResult(resultData);
+        } else {
+            document.getElementById('genBody').innerHTML = '<div style="text-align:center;color:#f56c6c;padding:40px 0;">⚠️ 生成失败，请重试</div>';
+        }
+    } catch (err) {
+        document.getElementById('genBody').innerHTML = `<div style="text-align:center;color:#f56c6c;padding:40px 0;">⚠️ 请求失败：${escHtml(err.message)}</div>`;
+    }
+}
+
+function showGenerateSubareaResult(data) {
+    const generated = data.generated_sub_areas || [];
+    const existing = data.existing_sub_areas || [];
+
+    let html = '';
+
+    // AI 思考过程（已完成）
+    html += `<div class="gen-section-title">✅ AI 思考完成</div>`;
+
+    // 已有子领域
+    if (existing.length > 0) {
+        html += `<div class="gen-section-title">📋 已有子领域</div>`;
+        html += `<div class="gen-existing-badge">已有 ${existing.length} 个子领域，不可编辑</div>`;
+        existing.forEach((item, i) => {
+            html += `
+                <div class="gen-item existing" data-index="${i}" data-type="existing" data-id="${item.id}">
+                    <span class="gen-item-index">${i + 1}</span>
+                    <input class="gen-item-input" value="${escHtml(item.name)}" disabled>
+                    <textarea class="gen-item-desc" rows="2" disabled>${escHtml(item.description || '')}</textarea>
+                    <span style="font-size:11px;color:#c0c4cc;white-space:nowrap;flex-shrink:0;">已存在</span>
+                </div>`;
+        });
+    }
+
+    // AI 生成的子领域（可编辑）
+    html += `<div class="gen-section-title">💡 AI 建议的子领域 (${generated.length})</div>`;
+    html += `<div id="genGeneratedList">`;
+    generated.forEach((item, i) => {
+        html += renderGenItem(i, item.title, item.description);
+    });
+    html += `</div>`;
+
+    // 添加按钮
+    html += `<button class="gen-add-btn" id="genAddBtn">➕ 添加条目</button>`;
+
+    // 底部操作栏
+    html += `
+        <div class="gen-footer">
+            <button class="gen-polish-btn" id="genPolishBtn">📝 检查并润色描述</button>
+        </div>`;
+
+    document.getElementById('genBody').innerHTML = html;
+
+    // 绑定事件
+    document.getElementById('genAddBtn').addEventListener('click', addGenItem);
+    document.getElementById('genPolishBtn').addEventListener('click', polishGenItems);
+
+    // 绑定各条目的删除和编辑事件
+    bindGenItemEvents();
+
+    // 自动调整描述文本框高度
+    document.querySelectorAll('#genGeneratedList .gen-item-desc, .gen-item.existing .gen-item-desc').forEach(autoResizeTextarea);
+}
+
+function renderGenItem(index, title, description) {
+    return `
+        <div class="gen-item" data-index="${index}" data-type="generated">
+            <span class="gen-item-index">${index + 1}</span>
+            <input class="gen-item-input gen-title-input" value="${escHtml(title || '')}" placeholder="标题">
+            <textarea class="gen-item-desc gen-desc-input" rows="2" placeholder="描述">${escHtml(description || '')}</textarea>
+            <button class="gen-item-add-btn">➕ 添加子领域</button>
+            <button class="gen-item-delete">🗑 删除</button>
+        </div>`;
+}
+
+function bindGenItemEvents() {
+    document.querySelectorAll('.gen-item:not(.existing) .gen-item-delete').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const item = e.currentTarget.closest('.gen-item');
+            if (item) item.remove();
+            refreshGenIndices();
+            updatePolishBtnState();
+        });
+    });
+
+    // 添加子领域按钮
+    document.querySelectorAll('.gen-item:not(.existing) .gen-item-add-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const item = e.currentTarget.closest('.gen-item');
+            if (!item) return;
+            const title = item.querySelector('.gen-title-input')?.value?.trim();
+            const desc = item.querySelector('.gen-desc-input')?.value?.trim();
+            if (!title) { alert('请先填写标题'); return; }
+
+            btn.disabled = true;
+            btn.textContent = '⏳ 添加中...';
+            try {
+                await api('/areas', {
+                    method: 'POST',
+                    body: { name: title, description: desc, parent_id: selectedAreaId },
+                });
+                btn.textContent = '✅ 已添加';
+                btn.classList.add('added');
+                // 展开父节点以便看到新建的子领域
+                if (selectedAreaId) _expanded[selectedAreaId] = true;
+                loadData();
+            } catch (err) {
+                btn.textContent = '❌ 失败';
+                setTimeout(() => {
+                    btn.textContent = '➕ 添加子领域';
+                    btn.disabled = false;
+                }, 2000);
+            }
+        });
+    });
+
+    // 输入变化时更新状态，并自动调整描述文本框高度
+    document.querySelectorAll('.gen-title-input, .gen-desc-input').forEach(input => {
+        input.addEventListener('input', function() {
+            updatePolishBtnState();
+            if (this.classList.contains('gen-desc-input')) {
+                autoResizeTextarea(this);
+            }
+        });
+    });
+}
+
+function addGenItem() {
+    const list = document.getElementById('genGeneratedList');
+    if (!list) return;
+    const count = list.querySelectorAll('.gen-item').length;
+    const div = document.createElement('div');
+    div.innerHTML = renderGenItem(count, '', '');
+    list.appendChild(div.firstElementChild);
+    bindGenItemEvents();
+    // 新条目的描述文本框自动调整高度
+    const desc = list.lastElementChild?.querySelector('.gen-desc-input');
+    if (desc) autoResizeTextarea(desc);
+    updatePolishBtnState();
+}
+
+function refreshGenIndices() {
+    const items = document.querySelectorAll('#genGeneratedList .gen-item');
+    items.forEach((item, i) => {
+        item.dataset.index = i;
+        const idxEl = item.querySelector('.gen-item-index');
+        if (idxEl) idxEl.textContent = i + 1;
+    });
+}
+
+function autoResizeTextarea(el) {
+    el.style.height = 'auto';
+    // 至少保留 2 行高度
+    const minHeight = el.dataset.minHeight || (el.dataset.minHeight = el.scrollHeight + 'px');
+    el.style.height = Math.max(parseInt(minHeight), el.scrollHeight) + 'px';
+}
+
+function updatePolishBtnState() {
+    // 只需确保按钮状态，如无生成项则禁用
+    const items = document.querySelectorAll('#genGeneratedList .gen-item');
+    const btn = document.getElementById('genPolishBtn');
+    if (btn) {
+        btn.disabled = items.length === 0;
+    }
+}
+
+function collectGenItems() {
+    const items = [];
+    // 收集 AI 生成的条目（可编辑区域）
+    document.querySelectorAll('#genGeneratedList .gen-item').forEach(item => {
+        const title = item.querySelector('.gen-title-input')?.value?.trim() || '';
+        const desc = item.querySelector('.gen-desc-input')?.value?.trim() || '';
+        if (title) {
+            items.push({ title, description: desc });
+        }
+    });
+    return items;
+}
+
+async function polishGenItems() {
+    const items = collectGenItems();
+    if (items.length === 0) {
+        alert('请至少保留一个子领域');
+        return;
+    }
+
+    // 确认用户是否已完成编辑
+    const confirmMsg = `将发送 ${items.length} 个子领域给 AI 检查和润色描述。\n注意：标题和数量不会改变。\n确定继续吗？`;
+    if (!confirm(confirmMsg)) return;
+
+    const btn = document.getElementById('genPolishBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ AI 润色中...';
+
+    try {
+        const result = await api(`/areas/${selectedAreaId}/polish-subareas`, {
+            method: 'POST',
+            body: { sub_areas: items },
+        });
+
+        if (result && result.sub_areas) {
+            const list = document.getElementById('genGeneratedList');
+            if (!list) return;
+            list.innerHTML = '';
+            result.sub_areas.forEach((item, i) => {
+                const div = document.createElement('div');
+                div.innerHTML = renderGenItem(i, item.title, item.description);
+                list.appendChild(div.firstElementChild);
+            });
+            bindGenItemEvents();
+            // 润色后自动调整高度
+            list.querySelectorAll('.gen-desc-input').forEach(autoResizeTextarea);
+            btn.textContent = '✅ 润色完成';
+            btn.disabled = false;
+            setTimeout(() => {
+                btn.textContent = '📝 检查并润色描述';
+            }, 2000);
+        } else {
+            throw new Error('未收到有效响应');
+        }
+    } catch (err) {
+        alert('润色失败：' + err.message);
+        btn.textContent = '📝 检查并润色描述';
+        btn.disabled = false;
+    }
 }
 
 

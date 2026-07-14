@@ -577,6 +577,150 @@ def create_examine_tools() -> list[Tool]:
     ]
 
 
+# -----------------------------------------------------------
+#  Generate Subareas Tool — 生成子领域建议
+# -----------------------------------------------------------
+def _list_existing_children_for_generation(area_id_str: str) -> str:
+    """查询指定 area 的所有直接子领域，返回 JSON 列表"""
+    db = SessionLocal()
+    try:
+        area_id = int(area_id_str)
+        children = db.query(Area).filter(
+            Area.parent_id == area_id
+        ).order_by(Area.order).all()
+        result = [{"id": c.id, "name": c.name, "description": c.description or ""}
+                  for c in children]
+        return json.dumps({"existing_sub_areas": result}, ensure_ascii=False)
+    finally:
+        db.close()
+
+
+def create_generate_tools() -> list[Tool]:
+    """创建生成子领域建议专用的 Tool 列表"""
+    return [
+        Tool(
+            name="list_existing_children",
+            func=_list_existing_children_for_generation,
+            description="输入 area_id，查询该 area 的所有直接子领域（已存在于数据库中的），返回 JSON 格式的列表。",
+        ),
+    ]
+
+
+async def run_generate_subareas_stream(area_id: int, area_name: str, area_description: str,
+                                        callback_handler) -> dict:
+    """流式生成子领域建议 - 通过 callback_handler 实时推送 tokens"""
+    llm = _build_llm(streaming=True, callbacks=[callback_handler])
+    tools = create_generate_tools()
+
+    agent = create_agent(
+        model=llm,
+        tools=tools,
+        system_prompt="你是一个知识领域分析助手，擅长根据学习内容生成子领域建议。",
+    )
+
+    from app.database import SessionLocal as _DB
+    db = _DB()
+    try:
+        # 获取最近聊天消息
+        msgs = (
+            db.query(ChatMessage)
+            .filter(ChatMessage.area_id == area_id)
+            .order_by(ChatMessage.created_at.desc())
+            .limit(20)
+            .all()
+        )
+        msgs.reverse()
+        chat_lines = []
+        for m in msgs:
+            role_label = "🧑 用户" if m.role == "user" else "🤖 AI"
+            chat_lines.append(f"[{role_label}] {m.content[:500]}")
+        chat_context = "\n".join(chat_lines) if chat_lines else "暂无对话记录"
+    finally:
+        db.close()
+
+    task = f"""请对学习领域「{area_name}」(ID={area_id}) 执行以下任务：
+
+## 当前领域信息
+名称: {area_name}
+简介: {area_description or '暂无简介'}
+
+## 最近聊天记录
+{chat_context[:3000]}
+
+请按以下步骤执行：
+
+### 步骤 1：查看现有子领域
+调用 list_existing_children({area_id}) 查看该领域下已存在的子领域。
+
+### 步骤 2：生成建议
+基于当前领域的名称、简介和最近的聊天记录内容，思考该领域可以深入研究的子方向。
+请生成 3-6 个建议的子领域，每个包含 title（标题）和 description（简要描述）。
+
+### 步骤 3：返回结果
+返回 JSON 格式（不要包含其他内容）：
+{{
+    "generated_sub_areas": [
+        {{"title": "子领域标题", "description": "子领域简要描述"}}
+    ],
+    "existing_sub_areas": []
+}}
+注意：existing_sub_areas 由工具返回填充，你只需生成 generated_sub_areas。
+
+请开始执行。"""
+    result = await agent.ainvoke({"messages": [HumanMessage(content=task)]})
+    messages = result.get("messages", [])
+    last_msg = messages[-1] if messages else result
+    reply = last_msg.content if hasattr(last_msg, "content") else str(last_msg)
+
+    # 解析返回的 JSON
+    parsed = _parse_llm_json(reply)
+    if not parsed:
+        # 尝试从完整消息中提取 JSON
+        import re
+        m = re.search(r'```(?:json)?\s*([\s\S]*?)```', reply)
+        if m:
+            parsed = _parse_llm_json(m.group(1))
+
+    if parsed:
+        return {
+            "generated_sub_areas": parsed.get("generated_sub_areas", []),
+            "existing_sub_areas": parsed.get("existing_sub_areas", []),
+        }
+    return {
+        "generated_sub_areas": [],
+        "existing_sub_areas": [],
+        "error": "AI 返回格式解析失败",
+    }
+
+
+async def run_polish_subareas(sub_areas: list[dict]) -> list[dict]:
+    """润色子领域描述：不改变 title 和数量，只优化 description"""
+    llm = _build_llm()
+
+    items_json = json.dumps(sub_areas, ensure_ascii=False, indent=2)
+    prompt = f"""你是一个知识领域专家。请审查以下子领域列表，仅优化每个条目的 description（描述），使其更加准确、清晰和深入。
+
+## 规则
+1. 绝对不要修改 title（标题）
+2. 绝对不要增加或删除条目
+3. 只改进 description 的文字表达
+
+## 输入列表
+{items_json}
+
+请严格按以下 JSON 格式返回（不要包含其他内容）：
+{{
+    "sub_areas": [
+        {{"title": "标题（不变）", "description": "优化后的描述"}}
+    ]
+}}"""
+    response = await llm.ainvoke([HumanMessage(content=prompt)])
+    result = _parse_llm_json(response.content)
+    if result and "sub_areas" in result:
+        return result["sub_areas"]
+    return sub_areas  # 解析失败则返回原列表
+
+
 async def run_examine_agent(area_id: int, area_name: str) -> dict:
     """创建 agent 并运行审查流程"""
     llm = _build_llm()
