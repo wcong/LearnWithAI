@@ -47,7 +47,11 @@ def import_sql(input_file: str):
 
     # 过滤掉注释行和 BEGIN/COMMIT 等控制语句
     insert_count = 0
-    with engine.begin() as conn:  # engine.begin() 自动提交 / 回滚
+    with engine.begin() as conn:
+        # MySQL：临时禁用外键检查（areas 表有自引用 parent_id）
+        if get_db_type() == "MySQL":
+            conn.execute(text("SET FOREIGN_KEY_CHECKS = 0;"))
+
         for raw_stmt in statements:
             # 跳过元语句
             upper = raw_stmt.upper()
@@ -73,6 +77,10 @@ def import_sql(input_file: str):
                 log.error("执行失败: %s", raw_stmt[:120])
                 log.error("错误: %s", e)
                 raise
+
+        # MySQL：重新启用外键检查
+        if get_db_type() == "MySQL":
+            conn.execute(text("SET FOREIGN_KEY_CHECKS = 1;"))
 
     log.info("✅ 导入完成：共执行 %d 条 INSERT 语句", insert_count)
 
