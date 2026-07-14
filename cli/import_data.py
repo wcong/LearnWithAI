@@ -29,6 +29,43 @@ from app.database import engine, get_db_type, DATABASE_URL
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 log = logging.getLogger("import_data")
 
+# SQL 语句开关列表（不执行）
+_SKIP_KEYWORDS = {"BEGIN TRANSACTION", "COMMIT", "BEGIN", "ROLLBACK"}
+
+
+def _split_sql_statements(content: str) -> list[str]:
+    """将 SQL 内容按分号切分为独立语句，正确处理字符串字面量中的分号。"""
+    statements: list[str] = []
+    current: list[str] = []
+    in_string = False
+    i = 0
+    while i < len(content):
+        ch = content[i]
+        if ch == "'" and not in_string:
+            in_string = True
+            current.append(ch)
+        elif ch == "'" and in_string:
+            # 转义单引号 '' 保持原样，不要关闭字符串
+            if i + 1 < len(content) and content[i + 1] == "'":
+                current.append("''")
+                i += 2
+                continue
+            in_string = False
+            current.append(ch)
+        elif ch == ";" and not in_string:
+            stmt = "".join(current).strip()
+            if stmt:
+                statements.append(stmt)
+            current = []
+        else:
+            current.append(ch)
+        i += 1
+    # 末尾残留
+    stmt = "".join(current).strip()
+    if stmt:
+        statements.append(stmt)
+    return statements
+
 
 def import_sql(input_file: str):
     """读取 SQL 文件并逐条执行 INSERT 语句"""
@@ -42,10 +79,8 @@ def import_sql(input_file: str):
     with open(input_file, "r", encoding="utf-8") as f:
         content = f.read()
 
-    # 按分号切分为独立语句
-    statements = [s.strip() for s in content.split(";") if s.strip()]
+    statements = _split_sql_statements(content)
 
-    # 过滤掉注释行和 BEGIN/COMMIT 等控制语句
     insert_count = 0
     with engine.begin() as conn:
         # MySQL：临时禁用外键检查（areas 表有自引用 parent_id）
@@ -54,16 +89,7 @@ def import_sql(input_file: str):
 
         for raw_stmt in statements:
             # 跳过元语句
-            upper = raw_stmt.upper()
-            if any(
-                kw in upper
-                for kw in [
-                    "BEGIN TRANSACTION",
-                    "COMMIT",
-                    "BEGIN",
-                    "ROLLBACK",
-                ]
-            ):
+            if raw_stmt.upper() in _SKIP_KEYWORDS:
                 continue
             # 跳过纯注释行
             if raw_stmt.startswith("--"):
