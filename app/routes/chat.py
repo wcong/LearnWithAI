@@ -1,5 +1,9 @@
 """聊天交互路由"""
+import asyncio
+import json
+
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -7,6 +11,7 @@ from app.auth import get_current_user
 from app.database import get_db
 from app.models import Area, ChatMessage, LearningSession, UsageLog, User
 from app.agents.learning_agent import LearningAgent
+from app.agents.streaming_handler import StreamingCallbackHandler
 
 router = APIRouter(prefix="/api/chat", tags=["Chat"])
 
@@ -92,6 +97,137 @@ async def chat(req: ChatRequest, db: Session = Depends(get_db),
     db.commit()
 
     return ChatResponse(reply=reply, area_id=area.id, message_id=msg.id)
+
+
+@router.post("/stream")
+async def chat_stream(req: ChatRequest, db: Session = Depends(get_db),
+                      user: User = Depends(get_current_user)):
+    """流式聊天 - 通过 SSE 实时推送 AI 的 thinking tokens"""
+    area = db.query(Area).get(req.area_id)
+    if not area or area.user_id != user.id:
+        raise HTTPException(404, "学习领域不存在")
+
+    # 获取或创建 agent
+    agent = _agent_cache.get(req.area_id)
+    if not agent:
+        agent = LearningAgent(
+            area_name=area.name,
+            area_description=area.description,
+            session_id=f"area_{area.id}",
+        )
+        history = get_chain_messages(db, req.area_id)
+        agent.add_history(history)
+        _agent_cache[req.area_id] = agent
+
+    # 保存用户消息
+    db.add(ChatMessage(area_id=area.id, role="user", content=req.message))
+    db.commit()
+
+    # 创建流式回调与队列
+    queue: asyncio.Queue = asyncio.Queue()
+    callback_handler = StreamingCallbackHandler(queue)
+
+    async def event_generator():
+        """异步生成器 - 消费队列 tokens 并生成 SSE 事件"""
+        # 启动 agent 流式处理（不等待，让生成器与回调并行）
+        agent_task = asyncio.create_task(
+            _run_streaming_chat(agent, req.message, callback_handler, queue, area.id)
+        )
+
+        # 持续消费队列中的 tokens，直到 agent 完成
+        while True:
+            get_task = asyncio.create_task(queue.get())
+            done_set, _ = await asyncio.wait(
+                [get_task, agent_task],
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+
+            if agent_task in done_set:
+                # Agent 已完成，不再有新的 tokens
+                get_task.cancel()
+                break
+
+            event_type, data = get_task.result()
+            if event_type == "error":
+                yield f"event: error\ndata: {json.dumps({'detail': data})}\n\n"
+                break
+            elif event_type == "thinking":
+                yield f"event: thinking\ndata: {json.dumps({'chunk': data})}\n\n"
+            elif event_type == "tool_call":
+                yield f"event: tool_call\ndata: {json.dumps({'chunk': data})}\n\n"
+
+        # 消费队列中可能残留的 tokens
+        while not queue.empty():
+            try:
+                event_type, data = queue.get_nowait()
+                if event_type == "thinking":
+                    yield f"event: thinking\ndata: {json.dumps({'chunk': data})}\n\n"
+                elif event_type == "tool_call":
+                    yield f"event: tool_call\ndata: {json.dumps({'chunk': data})}\n\n"
+                elif event_type == "error":
+                    yield f"event: error\ndata: {json.dumps({'detail': data})}\n\n"
+            except asyncio.QueueEmpty:
+                break
+
+        # 等待 agent 完成，获取完整回复
+        reply, usage, msg_id = await agent_task
+
+        # 发送 result 事件
+        result_data = json.dumps({
+            'reply': reply,
+            'message_id': msg_id,
+            'area_id': area.id,
+        })
+        yield f"event: result\ndata: {result_data}\n\n"
+
+        yield "event: done\ndata: {}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+async def _run_streaming_chat(agent: LearningAgent, message: str,
+                               callback_handler: StreamingCallbackHandler,
+                               queue: asyncio.Queue,
+                               area_id: int) -> tuple:
+    """执行流式聊天，返回 (reply, usage, message_id)"""
+    from app.database import SessionLocal
+
+    reply, usage = await agent.chat_stream(message, callback_handler)
+
+    # 保存 AI 回复和用量到 DB
+    db = SessionLocal()
+    try:
+        msg = ChatMessage(area_id=area_id, role="assistant", content=reply)
+        db.add(msg)
+        db.flush()
+
+        db.add(UsageLog(
+            area_id=area_id,
+            message_id=msg.id,
+            model=usage["model"],
+            provider=usage["provider"],
+            prompt_tokens=usage["prompt_tokens"],
+            completion_tokens=usage["completion_tokens"],
+            total_tokens=usage["total_tokens"],
+            duration_ms=usage["duration_ms"],
+        ))
+        db.commit()
+        msg_id = msg.id
+    except Exception:
+        db.rollback()
+        msg_id = None
+    finally:
+        db.close()
+
+    return reply, usage, msg_id
 
 
 @router.get("/usage/{message_id}")

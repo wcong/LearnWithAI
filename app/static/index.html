@@ -83,6 +83,17 @@
                 <p>选择一个学习领域，开启 AI 引导的深度学习之旅</p>
             </div>
         </div>
+        <!-- AI Thinking 实时展示面板 -->
+        <div class="thinking-panel" id="thinkingPanel" style="display:none;">
+            <div class="thinking-header" id="thinkingHeader">
+                <span class="thinking-icon" id="thinkingIcon">🤔</span>
+                <span class="thinking-title" id="thinkingTitle">AI 思考中...</span>
+                <button class="thinking-toggle" id="thinkingToggle" style="display:none;" title="收起">▼</button>
+            </div>
+            <div class="thinking-body" id="thinkingBody">
+                <div class="thinking-content" id="thinkingContent"></div>
+            </div>
+        </div>
         <div class="chat-input-area">
             <textarea id="chatInput" rows="1" placeholder="选择左侧领域后开始提问..." disabled></textarea>
             <button id="sendBtn" disabled>发送</button>
@@ -139,6 +150,19 @@
         </div>
         <div class="admin-body" id="adminBody">
             <div class="admin-loading">加载中...</div>
+        </div>
+    </div>
+</div>
+
+<!-- ====== 子领域审查结果模态框 ====== -->
+<div class="examine-overlay" id="examineOverlay">
+    <div class="examine-modal">
+        <div class="examine-header">
+            <span class="examine-label" id="examineLabel">🔍 审查子领域</span>
+            <button class="examine-close" id="btnCloseExamine">✕</button>
+        </div>
+        <div class="examine-body" id="examineBody">
+            <div class="examine-loading">⏳ AI 正在分析子领域...</div>
         </div>
     </div>
 </div>

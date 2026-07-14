@@ -173,3 +173,30 @@ class UsageLog(Base):
             "duration_ms": self.duration_ms,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
+
+
+class AreaAnalysis(Base):
+    """子领域审查分析记录"""
+    __tablename__ = "area_analyses"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    area_id = Column(Integer, ForeignKey("areas.id"), nullable=False, index=True)
+    summary = Column(Text, default="")
+    sub_area_summaries = Column(Text, default="")  # JSON: [{name, summary}]
+    missing_suggestions = Column(Text, default="")  # JSON: [{name, reason}]
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    area = relationship("Area", backref=backref("analyses",
+                                                 order_by="AreaAnalysis.created_at.desc()",
+                                                 cascade="all, delete-orphan"))
+
+    def to_dict(self) -> dict:
+        import json
+        return {
+            "id": self.id,
+            "area_id": self.area_id,
+            "summary": self.summary,
+            "sub_area_summaries": json.loads(self.sub_area_summaries) if self.sub_area_summaries else [],
+            "missing_suggestions": json.loads(self.missing_suggestions) if self.missing_suggestions else [],
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }

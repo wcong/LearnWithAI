@@ -23,6 +23,141 @@ async function api(path, opts = {}) {
 }
 
 // ============================================================
+//  SSE 流式读取 & Thinking 面板
+// ============================================================
+
+let _thinkingTokenBuffer = '';
+let _thinkingRafId = null;
+
+function parseSSEEvent(text) {
+    const lines = text.split('\n');
+    let type = 'message';
+    let data = {};
+    for (const line of lines) {
+        if (line.startsWith('event: ')) {
+            type = line.slice(7).trim();
+        } else if (line.startsWith('data: ')) {
+            try {
+                data = JSON.parse(line.slice(6));
+            } catch { /* ignore parse errors */ }
+        }
+    }
+    return { type, data };
+}
+
+function showThinkingPanel() {
+    const panel = document.getElementById('thinkingPanel');
+    const icon = document.getElementById('thinkingIcon');
+    const title = document.getElementById('thinkingTitle');
+    const toggle = document.getElementById('thinkingToggle');
+    const body = document.getElementById('thinkingBody');
+    const content = document.getElementById('thinkingContent');
+
+    panel.style.display = '';
+    panel.classList.remove('collapsed');
+    toggle.style.display = 'none';
+    body.style.display = '';
+    icon.textContent = '🤔';
+    icon.classList.add('loading');
+    title.textContent = 'AI 思考中...';
+    content.innerHTML = '';
+    _thinkingTokenBuffer = '';
+
+    // 将 thinking 面板插入到 chat-messages 下方
+    const chatMessages = document.getElementById('chatMessages');
+    const inputArea = document.querySelector('.chat-input-area');
+    if (panel.parentNode !== chatMessages.parentNode) {
+        inputArea.parentNode.insertBefore(panel, inputArea);
+    }
+}
+
+function updateThinkingContent(chunk) {
+    _thinkingTokenBuffer += chunk;
+    if (_thinkingRafId) return;
+    _thinkingRafId = requestAnimationFrame(() => {
+        _thinkingRafId = null;
+        const el = document.getElementById('thinkingContent');
+        if (el) el.innerHTML = escHtml(_thinkingTokenBuffer).replace(/\n/g, '<br>') + '<span class="thinking-cursor"></span>';
+        // 自动滚动到底部
+        const body = document.getElementById('thinkingBody');
+        if (body) body.scrollTop = body.scrollHeight;
+    });
+}
+
+function appendToolCall(chunk) {
+    document.getElementById('thinkingContent').innerHTML +=
+        `<span class="tool-call">${escHtml(chunk)}</span>`;
+}
+
+function completeThinking() {
+    const icon = document.getElementById('thinkingIcon');
+    const title = document.getElementById('thinkingTitle');
+    const toggle = document.getElementById('thinkingToggle');
+
+    icon.classList.remove('loading');
+    icon.textContent = '✅';
+    title.textContent = 'AI 思考完成';
+    toggle.style.display = '';
+
+    // 去掉光标
+    const el = document.getElementById('thinkingContent');
+    if (el) el.innerHTML = escHtml(_thinkingTokenBuffer).replace(/\n/g, '<br>');
+}
+
+function toggleThinkingPanel() {
+    const panel = document.getElementById('thinkingPanel');
+    const body = document.getElementById('thinkingBody');
+    const toggle = document.getElementById('thinkingToggle');
+    const isCollapsed = panel.classList.toggle('collapsed');
+    toggle.textContent = isCollapsed ? '▲' : '▼';
+}
+
+
+
+function _initThinkingPanel() {
+    const header = document.getElementById('thinkingHeader');
+    const toggle = document.getElementById('thinkingToggle');
+    if (header) {
+        header.addEventListener('click', (e) => {
+            if (e.target.closest('.thinking-toggle')) return;
+            if (document.getElementById('thinkingToggle').style.display !== 'none') {
+                toggleThinkingPanel();
+            }
+        });
+    }
+    if (toggle) {
+        toggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleThinkingPanel();
+        });
+    }
+}
+
+async function readSSEStream(response, callbacks) {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const events = buffer.split('\n\n');
+        buffer = events.pop();
+
+        for (const eventText of events) {
+            if (!eventText.trim()) continue;
+            const event = parseSSEEvent(eventText);
+            const handler = callbacks[event.type];
+            if (handler) {
+                await handler(event.data);
+            }
+        }
+    }
+}
+
+// ============================================================
 //  Auth UI
 // ============================================================
 
@@ -147,6 +282,12 @@ function bootApp() {
     });
     document.getElementById('btnAdminRefresh').addEventListener('click', loadAdminStats);
 
+    // Examine modal
+    document.getElementById('btnCloseExamine').addEventListener('click', closeExamineModal);
+    document.getElementById('examineOverlay').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeExamineModal();
+    });
+
     // Quill 编辑器初始化（放在事件绑定之后，即使失败也不影响 UI 交互）
     if (!quill) {
         try {
@@ -171,6 +312,9 @@ function bootApp() {
             console.warn('Quill 编辑器初始化失败，笔记功能暂不可用', e);
         }
     }
+
+    // Thinking 面板初始化
+    _initThinkingPanel();
 
     loadData();
 }
@@ -209,7 +353,11 @@ function buildTreeHtml(nodes) {
             : `<span class="tree-toggle leaf">▶</span>`;
         html += `<span class="tree-icon">${hasChildren ? '📂' : '📄'}</span>`;
         html += `<span class="tree-name">${escHtml(n.name)}</span>`;
-        html += `<button class="tree-delete" title="删除此领域">✕</button></div>`;
+        html += `<button class="tree-delete" title="删除此领域">✕</button>`;
+        if (hasChildren) {
+            html += `<button class="tree-examine" title="审查子领域">🔍</button>`;
+        }
+        html += `</div>`;
         if (hasChildren) {
             html += `<div class="tree-children" style="display:${isExpanded ? '' : 'none'}">${buildTreeHtml(n.children)}</div>`;
         }
@@ -223,6 +371,7 @@ function bindTreeEvents(container) {
         const id = parseInt(row.dataset.id, 10);
         row.addEventListener('click', (e) => {
             if (e.target.closest('.tree-delete')) return;
+            if (e.target.closest('.tree-examine')) return;
             if (e.target.closest('.tree-toggle')) {
                 const toggle = e.target.closest('.tree-toggle');
                 if (toggle.classList.contains('leaf')) return;
@@ -239,6 +388,11 @@ function bindTreeEvents(container) {
             e.stopPropagation();
             const node = findNodeById(treeData, id);
             if (node) deleteArea(node.id, node.name);
+        });
+        row.querySelector('.tree-examine')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const node = findNodeById(treeData, id);
+            if (node) examineArea(node.id, node.name);
         });
     });
 }
@@ -260,6 +414,174 @@ async function deleteArea(id, name) {
         if (selectedAreaId === id) { selectedAreaId = null; selectedAreaName = ''; clearArea(); }
         await loadData();
     } catch (err) { alert('删除失败：' + err.message); }
+}
+
+// ============================================================
+//  审查子领域
+// ============================================================
+
+async function examineArea(areaId, areaName) {
+    const btn = document.querySelector(`.tree-row[data-id="${areaId}"] .tree-examine`);
+    if (btn) btn.disabled = true;
+
+    document.getElementById('examineLabel').textContent = `🔍 审查子领域 · ${areaName}`;
+    document.getElementById('examineOverlay').classList.add('active');
+    document.getElementById('examineBody').innerHTML = `
+        <div class="examine-loading" id="examineThinking">
+            <span id="examineThinkingIcon">🤔</span>
+            <span id="examineThinkingText">AI 正在分析子领域...</span>
+        </div>
+        <div class="examine-stream" id="examineStream"></div>`;
+
+    try {
+        const res = await fetch(`/api/areas/${areaId}/examine/stream`, {
+            method: 'POST',
+            headers: {
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            },
+        });
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || `请求失败 (${res.status})`);
+        }
+
+        let resultData = null;
+        const streamEl = document.getElementById('examineStream');
+        let streamContent = '';
+
+        await readSSEStream(res, {
+            thinking: (data) => {
+                if (data.chunk) {
+                    streamContent += data.chunk;
+                    streamEl.innerHTML = escHtml(streamContent).replace(/\n/g, '<br>');
+                }
+            },
+            tool_call: (data) => {
+                if (data.chunk) {
+                    streamContent += '\n' + data.chunk;
+                    streamEl.innerHTML = escHtml(streamContent).replace(/\n/g, '<br>');
+                }
+            },
+            result: (data) => {
+                resultData = data;
+            },
+            error: (data) => {
+                throw new Error(data.detail || '审查出错');
+            },
+        });
+
+        if (resultData && resultData.sub_area_summaries) {
+            showExamineResult(resultData, areaName);
+        } else if (resultData) {
+            showExamineResult(resultData, areaName);
+        } else {
+            document.getElementById('examineBody').innerHTML =
+                '<div class="examine-loading" style="color:#ef4444;">⚠️ 审查未返回有效结果</div>';
+        }
+    } catch (err) {
+        document.getElementById('examineBody').innerHTML =
+            `<div class="examine-loading" style="color:#ef4444;">⚠️ 分析失败：${escHtml(err.message)}</div>`;
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+function showExamineResult(data, areaName) {
+    const subs = data.sub_area_summaries || [];
+    const missing = data.missing_suggestions || [];
+
+    let html = '';
+
+    // 总体摘要
+    if (data.summary) {
+        html += `<div class="examine-summary">${escHtml(data.summary)}</div>`;
+    }
+
+    // 子领域摘要
+    html += `<div class="examine-section-title">📋 子领域摘要 (${subs.length})</div>`;
+    if (subs.length === 0) {
+        html += '<div class="examine-empty">暂无子领域摘要</div>';
+    } else {
+        subs.forEach((s, i) => {
+            html += `
+                <div class="examine-sub-card">
+                    <div class="examine-sub-index">${i + 1}</div>
+                    <div>
+                        <div class="examine-sub-name">${escHtml(s.name)}</div>
+                        <div class="examine-sub-desc">${escHtml(s.summary || '')}</div>
+                    </div>
+                </div>`;
+        });
+    }
+
+    // 缺失建议
+    html += `<div class="examine-section-title" style="margin-top:20px;">💡 建议补充的子领域 (${missing.length})</div>`;
+    if (missing.length === 0) {
+        html += '<div style="text-align:center;color:#67c23a;padding:16px 0;font-size:13px;">✅ 当前子领域覆盖完整，无需补充</div>';
+    } else {
+        missing.forEach((m, i) => {
+            html += `
+                <div class="examine-missing-card">
+                    <div class="examine-missing-icon">${i + 1}</div>
+                    <div>
+                        <div class="examine-missing-name">${escHtml(m.name)}</div>
+                        <div class="examine-missing-reason">📌 ${escHtml(m.reason || '')}</div>
+                    </div>
+                    <button class="examine-create-btn" data-name="${escHtml(m.name)}" data-reason="${escHtml(m.reason || '')}"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg> 创建</button>
+                </div>`;
+        });
+    }
+
+    // 底部操作栏
+    const time = data.created_at
+        ? new Date(data.created_at).toLocaleString('zh-CN')
+        : '';
+    html += `
+        <div class="examine-footer">
+            <span class="examine-time">🕐 ${time || '刚刚'}</span>
+            <button class="examine-reload-btn" id="btnExamineReload">🔄 重新分析</button>
+        </div>`;
+
+    document.getElementById('examineBody').innerHTML = html;
+
+    // 绑定重新分析按钮
+    document.getElementById('btnExamineReload')?.addEventListener('click', () => {
+        const id = data.area_id;
+        if (id) examineArea(id, areaName);
+    });
+
+    // 绑定缺失建议的创建按钮
+    document.querySelectorAll('.examine-create-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const name = btn.dataset.name;
+            const reason = btn.dataset.reason;
+            const parentId = data.area_id;
+            if (!name || !parentId) return;
+
+            btn.disabled = true;
+            btn.textContent = '创建中...';
+            try {
+                await api('/areas', {
+                    method: 'POST',
+                    body: { name, description: reason, parent_id: parentId },
+                });
+                btn.textContent = '✅ 已创建';
+                btn.classList.add('created');
+                // 展开父节点以便看到新建的子领域
+                if (parentId) _expanded[parentId] = true;
+                loadData();
+            } catch (err) {
+                btn.textContent = '❌ 失败';
+                setTimeout(() => { btn.textContent = '➕ 创建'; btn.disabled = false; }, 2000);
+            }
+        });
+    });
+}
+
+function closeExamineModal() {
+    document.getElementById('examineOverlay').classList.remove('active');
 }
 
 // ============================================================
@@ -432,12 +754,69 @@ async function sendMessage() {
     isSending = true;
     const btn = document.getElementById('sendBtn');
     btn.disabled = true; btn.textContent = '发送中...';
+
+    // 显示 thinking 面板
+    showThinkingPanel();
+
     try {
-        const data = await api('/chat', { method: 'POST', body: { area_id: selectedAreaId, message: msg } });
-        appendMessage('assistant', data.reply, data.message_id);
-        await loadData();
-    } catch (err) { appendMessage('assistant', '⚠️ 请求失败：' + err.message); }
-    finally { isSending = false; btn.disabled = false; btn.textContent = '发送'; document.getElementById('chatInput').focus(); }
+        const res = await fetch('/api/chat/stream', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ area_id: selectedAreaId, message: msg }),
+        });
+
+        if (!res.ok) {
+            if (res.status === 401) { logout(); throw new Error('登录已过期'); }
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || `请求失败 (${res.status})`);
+        }
+
+        let resultData = null;
+        let fullThinking = '';
+
+        await readSSEStream(res, {
+            thinking: (data) => {
+                if (data.chunk) updateThinkingContent(data.chunk);
+            },
+            tool_call: (data) => {
+                if (data.chunk) appendToolCall(data.chunk);
+            },
+            result: (data) => {
+                resultData = data;
+                if (data.reply) {
+                    appendMessage('assistant', data.reply, data.message_id);
+                }
+            },
+            error: (data) => {
+                throw new Error(data.detail || 'AI 处理出错');
+            },
+        });
+
+        completeThinking();
+
+        if (resultData) {
+            await loadData();
+        } else {
+            appendMessage('assistant', '⚠️ AI 未返回有效回复');
+        }
+    } catch (err) {
+        appendMessage('assistant', '⚠️ 请求失败：' + err.message);
+        // 出错时也标记 thinking 完成
+        const icon = document.getElementById('thinkingIcon');
+        const title = document.getElementById('thinkingTitle');
+        if (icon) { icon.textContent = '⚠️'; icon.classList.remove('loading'); }
+        if (title) title.textContent = '思考中断';
+        const toggle = document.getElementById('thinkingToggle');
+        if (toggle) toggle.style.display = '';
+    } finally {
+        isSending = false;
+        btn.disabled = false;
+        btn.textContent = '发送';
+        document.getElementById('chatInput').focus();
+    }
 }
 
 function buildUsageHtml(usage) {
