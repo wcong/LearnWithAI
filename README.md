@@ -159,6 +159,179 @@ LearnWithAI/
 
 ---
 
+## 🐧 Linux 生产部署
+
+### 1. 安装 Python 和依赖
+
+```bash
+# Ubuntu / Debian
+sudo apt update
+sudo apt install -y python3 python3-venv python3-pip git
+
+# CentOS / RHEL / Fedora
+sudo yum install -y python3 python3-pip git
+```
+
+### 2. 克隆项目并创建虚拟环境
+
+```bash
+git clone https://github.com/your-org/LearnWithAI.git
+cd LearnWithAI
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 3. 配置环境变量
+
+```bash
+cp .env.example .env
+# 编辑 .env 填入你的 LLM API Key 等配置
+vim .env
+```
+
+关键配置项：
+
+| 变量 | 说明 |
+|------|------|
+| `LLM_API_KEY` | **必填**，LLM 服务商 API Key |
+| `LLM_API_BASE` | 自定义 API 地址（如使用中转代理） |
+| `HOST` | 监听地址，生产环境建议 `0.0.0.0` |
+| `PORT` | 监听端口（默认 `7860`） |
+| `ADMIN_USERNAME` | 管理员用户名（默认 `admin`） |
+
+> **安全提醒**：生产环境请务必修改 `JWT_SECRET`（默认值为开发密钥），在 `.env` 中添加：
+> ```
+> JWT_SECRET=your-random-secret-string-here
+> ```
+
+### 4. 使用 systemd 注册为系统服务（推荐）
+
+创建服务文件：
+
+```bash
+sudo vim /etc/systemd/system/learnwithai.service
+```
+
+写入以下内容（请根据实际路径修改 `User`、`WorkingDirectory` 和 `ExecStart`）：
+
+```ini
+[Unit]
+Description=LearnWithAI - AI Learning Platform
+After=network.target
+
+[Service]
+Type=simple
+User=your-user
+WorkingDirectory=/home/your-user/LearnWithAI
+ExecStart=/home/your-user/LearnWithAI/venv/bin/python main.py
+Restart=always
+RestartSec=5
+Environment=ENV=production
+
+[Install]
+WantedBy=multi-user.target
+```
+
+启动并启用开机自启：
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl start learnwithai
+sudo systemctl enable learnwithai    # 开机自启
+sudo systemctl status learnwithai    # 查看状态
+```
+
+查看实时日志：
+
+```bash
+sudo journalctl -u learnwithai -f
+```
+
+### 5. （可选）使用 Nginx 反向代理
+
+安装 Nginx：
+
+```bash
+sudo apt install -y nginx    # Ubuntu/Debian
+sudo yum install -y nginx    # CentOS/RHEL
+```
+
+创建 Nginx 配置：
+
+```bash
+sudo vim /etc/nginx/sites-available/learnwithai
+```
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;  # 替换为你的域名或 IP
+
+    client_max_body_size 10m;
+
+    location / {
+        proxy_pass http://127.0.0.1:7860;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+启用并重启：
+
+```bash
+sudo ln -s /etc/nginx/sites-available/learnwithai /etc/nginx/sites-enabled/
+sudo nginx -t                    # 测试配置
+sudo systemctl restart nginx
+```
+
+### 6. （可选）使用 SSL（HTTPS）
+
+使用 Let's Encrypt 免费证书：
+
+```bash
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d your-domain.com
+```
+
+### 7. 后台直接运行（不使用 systemd）
+
+```bash
+cd /path/to/LearnWithAI
+source venv/bin/activate
+nohup python main.py > app.log 2>&1 &
+```
+
+查看日志：
+
+```bash
+tail -f app.log
+```
+
+### 8. 常用管理命令
+
+```bash
+# 查看服务状态
+sudo systemctl status learnwithai
+
+# 重启服务
+sudo systemctl restart learnwithai
+
+# 查看最近日志
+sudo journalctl -u learnwithai -n 50
+
+# 实时跟踪日志
+sudo journalctl -u learnwithai -f
+
+# 停止服务
+sudo systemctl stop learnwithai
+```
+
+---
+
 ## ⚙️ 高级配置
 
 | 环境变量 | 默认值 | 说明 |

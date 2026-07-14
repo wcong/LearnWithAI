@@ -80,7 +80,7 @@ def dump(output_file: str | None = None):
                     continue
 
                 columns = [col["name"] for col in inspector.get_columns(table_name)]
-                col_list = ", ".join(columns)
+                col_list = ", ".join(f"`{c}`" for c in columns)
 
                 _write(out, f"-- Table: {table_name}\n")
 
