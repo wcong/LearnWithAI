@@ -27,7 +27,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.database import init_db, get_db_type
-from app.routes import areas, chat, auth, notes, rag, admin, plan
+from app.routes import areas, chat, auth, notes, rag, admin, plan, skills
 
 # ── 日志配置 ──────────────────────────────
 logging.basicConfig(
@@ -99,6 +99,7 @@ app.include_router(notes.router)
 app.include_router(rag.router)
 app.include_router(admin.router)
 app.include_router(plan.router)
+app.include_router(skills.router)
 
 
 @app.get("/")

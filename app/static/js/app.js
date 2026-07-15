@@ -236,6 +236,8 @@ let isSending = false;
 let _expanded = {};
 let quill = null;
 let _isEditingNote = false;
+let selectedSkillId = null;
+let _skills = [];
 
 // ============================================================
 //  Boot
@@ -281,6 +283,28 @@ function bootApp() {
         if (e.target === e.currentTarget) closeAdminPanel();
     });
     document.getElementById('btnAdminRefresh').addEventListener('click', loadAdminStats);
+    // Admin tab switching
+    document.querySelectorAll('.admin-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            if (tab.dataset.tab === 'stats') loadAdminStats();
+        });
+    });
+
+    // Skill selector
+    document.getElementById('skillSelect').addEventListener('change', (e) => {
+        selectedSkillId = e.target.value ? parseInt(e.target.value, 10) : null;
+        const skill = _skills.find(s => s.id === selectedSkillId);
+        const input = document.getElementById('chatInput');
+        if (skill) {
+            input.placeholder = `使用「${skill.name}」提问...`;
+        } else if (selectedAreaName) {
+            input.placeholder = `在「${selectedAreaName}」中提问...`;
+        } else {
+            input.placeholder = '选择左侧领域后开始提问...';
+        }
+    });
 
     // Examine modal
     document.getElementById('btnCloseExamine').addEventListener('click', closeExamineModal);
@@ -612,11 +636,15 @@ function selectArea(nodeData) {
     document.getElementById('chatMessages').innerHTML =
         `<div class="empty-chat"><div class="icon">💬</div><p>已进入 <strong>${nodeData.name}</strong>，开始学习吧！</p></div>`;
     document.getElementById('chatInput').disabled = false;
-    document.getElementById('chatInput').placeholder = `在「${nodeData.name}」中提问...`;
+    const skill = _skills.find(s => s.id === selectedSkillId);
+    document.getElementById('chatInput').placeholder = skill
+        ? `使用「${skill.name}」提问...`
+        : `在「${nodeData.name}」中提问...`;
     document.getElementById('sendBtn').disabled = false;
 
     loadHistory(nodeData.id);
     loadNote(nodeData.id);
+    loadSkills();
 }
 
 function clearArea() {
@@ -665,6 +693,31 @@ function showNoteView() {
     document.getElementById('btnEditNote').style.display = 'inline-block';
     document.getElementById('btnSaveNote').style.display = 'none';
     document.getElementById('noteStatus').textContent = '';
+}
+
+// ============================================================
+//  Skill 选择
+// ============================================================
+
+async function loadSkills() {
+    try {
+        _skills = await api('/skills');
+        const select = document.getElementById('skillSelect');
+        const currentVal = select.value;
+        select.innerHTML = '<option value="">无 Skill</option>';
+        _skills.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.textContent = s.name + (s.is_global ? ' 🌐' : '');
+            select.appendChild(opt);
+        });
+        if (selectedSkillId && _skills.some(s => s.id === selectedSkillId)) {
+            select.value = selectedSkillId;
+        } else {
+            select.value = '';
+            selectedSkillId = null;
+        }
+    } catch { /* ignore */ }
 }
 
 function showEditNote() {
@@ -803,13 +856,16 @@ async function sendMessage() {
     showThinkingPanel();
 
     try {
+        const body = { area_id: selectedAreaId, message: msg };
+        if (selectedSkillId) body.skill_id = selectedSkillId;
+
         const res = await fetch('/api/chat/stream', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
             },
-            body: JSON.stringify({ area_id: selectedAreaId, message: msg }),
+            body: JSON.stringify(body),
         });
 
         if (!res.ok) {
@@ -1376,7 +1432,6 @@ async function polishGenItems() {
         btn.disabled = false;
     }
 }
-
 
 // ============================================================
 //  Boot

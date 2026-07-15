@@ -440,12 +440,55 @@ html, body {
 }
 .msg-del-btn:hover { background: #f56c6c; color: #fff; }
 
-.chat-input-area { padding:10px 18px 14px; background:#fff; border-top:1px solid #e4e7ed; display:flex; gap:8px; align-items:flex-end; }
+.chat-input-area { padding:10px 18px 14px; background:#fff; border-top:1px solid #e4e7ed; display:flex; flex-direction:column; gap:6px; }
+.chat-input-row { display:flex; gap:8px; align-items:flex-end; }
 .chat-input-area textarea { flex:1; padding:7px 10px; border:1px solid #dcdfe6; border-radius:6px; font-size:13px; resize:none; outline:none; min-height:34px; max-height:80px; font-family:inherit; line-height:1.4; transition:border-color .2s; }
 .chat-input-area textarea:focus { border-color:#409eff; }
 .chat-input-area button { padding:7px 16px; border:none; border-radius:6px; background:#409eff; color:#fff; font-size:13px; cursor:pointer; transition:background .2s; white-space:nowrap; }
 .chat-input-area button:hover { background:#337ecc; }
 .chat-input-area button:disabled { background:#a8c8e8; cursor:not-allowed; }
+
+/* ========== Skill Toolbar ========== */
+.skill-toolbar {
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+.skill-select {
+    width:auto;
+    max-width:180px;
+    height:24px;
+    font-size:12px;
+    border:1px solid #dcdfe6;
+    border-radius:4px;
+    padding:0 6px;
+    background:#fff;
+    color:#303133;
+    outline:none;
+    cursor:pointer;
+}
+.skill-select:focus {
+    border-color:#409eff;
+}
+.skill-manage-link {
+    width:24px;
+    height:24px;
+    border:1px solid #dcdfe6;
+    border-radius:4px;
+    background:#fff;
+    font-size:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-decoration:none;
+    color:#909399;
+    transition:all 0.2s;
+    flex-shrink:0;
+}
+.skill-manage-link:hover {
+    border-color:#409eff;
+    color:#409eff;
+}
 
 /* ========== Modals ========== */
 .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:1000; align-items:center; justify-content:center; }
@@ -641,8 +684,24 @@ mark.rag-highlight { background:#fff3cd; color:#856404; padding:0 2px; border-ra
     align-items:center;
     justify-content:center;
     transition:background .2s;
+    text-decoration:none;
 }
 .icon-btn:hover { background:#e4e7ed; }
+
+.header-link-icon {
+    width:32px; height:32px;
+    border:none;
+    background:#f5f7fa;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:background .2s;
+    text-decoration:none;
+}
+.header-link-icon:hover { background:#e4e7ed; }
 
 .admin-overlay {
     display:none;
@@ -2003,4 +2062,31 @@ mark.rag-highlight { background:#fff3cd; color:#856404; padding:0 2px; border-ra
     .plan-status-bar { flex-wrap:wrap; gap:8px; }
     .plan-status-item { flex:1 1 45%; border-right:none; }
     .plan-result-cards { flex-wrap:wrap; }
+}
+
+/* ---- Admin 标签页 ---- */
+.admin-tabs {
+    display:flex;
+    gap:0;
+    border-bottom:1px solid #e4e7ed;
+    padding:0 20px;
+    flex-shrink:0;
+}
+.admin-tab {
+    padding:10px 16px;
+    font-size:13px;
+    border:none;
+    background:none;
+    color:#909399;
+    cursor:pointer;
+    border-bottom:2px solid transparent;
+    transition:all 0.2s;
+}
+.admin-tab:hover {
+    color:#606266;
+}
+.admin-tab.active {
+    color:#409eff;
+    border-bottom-color:#409eff;
+    font-weight:500;
 }

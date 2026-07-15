@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
 from app.database import get_db
-from app.models import Area, ChatMessage, LearningSession, UsageLog, User
+from app.models import Area, ChatMessage, LearningSession, Skill, UsageLog, User
 from app.agents.learning_agent import LearningAgent
 from app.agents.streaming_handler import StreamingCallbackHandler
 
@@ -22,6 +22,7 @@ _agent_cache: dict[int, LearningAgent] = {}
 class ChatRequest(BaseModel):
     area_id: int
     message: str
+    skill_id: int | None = None  # 可选：引用的技能模板 ID
 
 
 class ChatResponse(BaseModel):
@@ -50,6 +51,16 @@ def get_chain_messages(db: Session, area_id: int) -> list[dict]:
     return [m.to_dict() for m in messages]
 
 
+def _apply_skill_template(message: str, skill_id: int | None, db: Session) -> str:
+    """如果传入了 skill_id，用技能模板包装用户消息"""
+    if skill_id is None:
+        return message
+    skill = db.query(Skill).get(skill_id)
+    if not skill:
+        return message
+    return skill.prompt_template.replace("{topic}", message)
+
+
 @router.post("", response_model=ChatResponse)
 async def chat(req: ChatRequest, db: Session = Depends(get_db),
                user: User = Depends(get_current_user)):
@@ -57,6 +68,9 @@ async def chat(req: ChatRequest, db: Session = Depends(get_db),
     area = db.query(Area).get(req.area_id)
     if not area or area.user_id != user.id:
         raise HTTPException(404, "学习领域不存在")
+
+    # 应用技能模板（如有）
+    final_message = _apply_skill_template(req.message, req.skill_id, db)
 
     # 获取或创建 agent
     agent = _agent_cache.get(req.area_id)
@@ -71,12 +85,12 @@ async def chat(req: ChatRequest, db: Session = Depends(get_db),
         agent.add_history(history)
         _agent_cache[req.area_id] = agent
 
-    # 保存用户消息
-    db.add(ChatMessage(area_id=area.id, role="user", content=req.message))
+    # 保存用户消息（使用最终消息）
+    db.add(ChatMessage(area_id=area.id, role="user", content=final_message))
     db.commit()
 
-    # 调用 AI
-    reply, usage = await agent.ask(req.message)
+    # 调用 AI（使用最终消息）
+    reply, usage = await agent.ask(final_message)
 
     # 保存 AI 回复
     msg = ChatMessage(area_id=area.id, role="assistant", content=reply)
@@ -107,6 +121,9 @@ async def chat_stream(req: ChatRequest, db: Session = Depends(get_db),
     if not area or area.user_id != user.id:
         raise HTTPException(404, "学习领域不存在")
 
+    # 应用技能模板（如有）
+    final_message = _apply_skill_template(req.message, req.skill_id, db)
+
     # 获取或创建 agent
     agent = _agent_cache.get(req.area_id)
     if not agent:
@@ -119,8 +136,8 @@ async def chat_stream(req: ChatRequest, db: Session = Depends(get_db),
         agent.add_history(history)
         _agent_cache[req.area_id] = agent
 
-    # 保存用户消息
-    db.add(ChatMessage(area_id=area.id, role="user", content=req.message))
+    # 保存用户消息（使用最终消息）
+    db.add(ChatMessage(area_id=area.id, role="user", content=final_message))
     db.commit()
 
     # 创建流式回调与队列
@@ -131,7 +148,7 @@ async def chat_stream(req: ChatRequest, db: Session = Depends(get_db),
         """异步生成器 - 消费队列 tokens 并生成 SSE 事件"""
         # 启动 agent 流式处理（不等待，让生成器与回调并行）
         agent_task = asyncio.create_task(
-            _run_streaming_chat(agent, req.message, callback_handler, queue, area.id)
+            _run_streaming_chat(agent, final_message, callback_handler, queue, area.id)
         )
 
         # 持续消费队列中的 tokens，直到 agent 完成

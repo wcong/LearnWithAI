@@ -205,6 +205,36 @@ class AreaAnalysis(Base):
         }
 
 
+class Skill(Base):
+    """技能模板：可复用的提示词模板，用户在聊天时引用"""
+    __tablename__ = "skills"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String(200), nullable=False, index=True)
+    description = Column(Text, default="")
+    prompt_template = Column(Text, nullable=False)  # 提示词模板，用 {topic} 占位用户输入
+    is_global = Column(Integer, default=0)           # 1=全局技能（管理员创建）
+    is_default = Column(Integer, default=0)          # 1=系统内置默认技能（不可删除）
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # 私人技能的所属用户
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)  # 创建者
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "prompt_template": self.prompt_template,
+            "is_global": bool(self.is_global),
+            "is_default": bool(self.is_default),
+            "user_id": self.user_id,
+            "created_by": self.created_by,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
 class LoginHistory(Base):
     """用户登录历史记录"""
     __tablename__ = "login_history"

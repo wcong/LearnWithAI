@@ -12,6 +12,8 @@ let quill = null;
 let _isEditingNote = false;
 let _ragSearching = false;
 let _genSubareasData = null;
+let selectedSkillId = null;
+let _skills = [];
 
 // Thinking panel state
 let _thinkingTokenBuffer = '';
@@ -156,6 +158,28 @@ function bootApp() {
     document.getElementById('mModalAdminClose').addEventListener('click', closeAdminModal);
     document.getElementById('mBtnAdminRefresh').addEventListener('click', loadAdminStats);
     document.getElementById('mBtnAdmin').addEventListener('click', showAdminModal);
+    document.querySelectorAll('#mModalAdmin .m-admin-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('#mModalAdmin .m-admin-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            if (tab.dataset.tab === 'stats') loadAdminStats();
+        });
+    });
+
+    // Skill selector
+    document.getElementById('mSkillSelect').addEventListener('change', (e) => {
+        selectedSkillId = e.target.value ? parseInt(e.target.value, 10) : null;
+        const skill = _skills.find(s => s.id === selectedSkillId);
+        const input = document.getElementById('mChatInput');
+        if (skill) {
+            input.placeholder = `使用「${skill.name}」提问...`;
+        } else if (selectedAreaName) {
+            input.placeholder = `在「${selectedAreaName}」中提问...`;
+        } else {
+            input.placeholder = '选择领域后开始提问...';
+        }
+    });
+
     document.getElementById('mModalExamineClose').addEventListener('click', closeExamineModal);
     document.getElementById('mModalGenClose').addEventListener('click', closeGenModal);
 
@@ -310,11 +334,15 @@ function selectArea(nodeData) {
     document.getElementById('mChatMessages').innerHTML =
         `<div class="m-empty-state"><div class="m-empty-icon">💬</div><p>已进入 <strong>${nodeData.name}</strong>，开始学习吧！</p></div>`;
     document.getElementById('mChatInput').disabled = false;
-    document.getElementById('mChatInput').placeholder = `在「${nodeData.name}」中提问...`;
+    const skill = _skills.find(s => s.id === selectedSkillId);
+    document.getElementById('mChatInput').placeholder = skill
+        ? `使用「${skill.name}」提问...`
+        : `在「${nodeData.name}」中提问...`;
     document.getElementById('mSendBtn').disabled = false;
 
     loadHistory(nodeData.id);
     loadNote(nodeData.id);
+    loadSkills();
 }
 
 function clearArea() {
@@ -331,6 +359,30 @@ function clearArea() {
     document.getElementById('mBtnEditNote').style.display = 'none';
     document.getElementById('mBtnSaveNote').style.display = 'none';
     document.getElementById('mNoteStatus').textContent = '';
+}
+
+// ============================================================
+//  Skill 选择
+// ============================================================
+
+async function loadSkills() {
+    try {
+        _skills = await api('/skills');
+        const select = document.getElementById('mSkillSelect');
+        select.innerHTML = '<option value="">无 Skill</option>';
+        _skills.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.textContent = s.name + (s.is_global ? ' 🌐' : '');
+            select.appendChild(opt);
+        });
+        if (selectedSkillId && _skills.some(s => s.id === selectedSkillId)) {
+            select.value = selectedSkillId;
+        } else {
+            select.value = '';
+            selectedSkillId = null;
+        }
+    } catch { /* ignore */ }
 }
 
 // ============================================================
@@ -460,13 +512,16 @@ async function sendMessage() {
     showThinkingPanel();
 
     try {
+        const body = { area_id: selectedAreaId, message: msg };
+        if (selectedSkillId) body.skill_id = selectedSkillId;
+
         const res = await fetch('/api/chat/stream', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
             },
-            body: JSON.stringify({ area_id: selectedAreaId, message: msg }),
+            body: JSON.stringify(body),
         });
 
         if (!res.ok) {
@@ -734,7 +789,11 @@ function highlightText(text, query) {
 
 function showAdminModal() {
     document.getElementById('mModalAdmin').classList.add('active');
-    document.getElementById('mAdminBody').innerHTML = '<div class="m-admin-loading">加载中...</div>';
+    document.getElementById('mAdminContent').innerHTML = '<div class="m-admin-loading">加载中...</div>';
+    // Reset admin tab
+    document.querySelectorAll('#mModalAdmin .m-admin-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.tab === 'stats');
+    });
     loadAdminStats();
 }
 
@@ -743,17 +802,17 @@ function closeAdminModal() {
 }
 
 async function loadAdminStats() {
-    const body = document.getElementById('mAdminBody');
-    body.innerHTML = '<div class="m-admin-loading">加载中...</div>';
+    const content = document.getElementById('mAdminContent');
+    content.innerHTML = '<div class="m-admin-loading">加载中...</div>';
     try {
         const data = await api('/admin/stats');
-        renderAdminStats(data, body);
+        renderAdminStats(data, content);
     } catch (err) {
-        body.innerHTML = `<div class="m-admin-loading" style="color:var(--danger)">⚠️ 加载失败：${escHtml(err.message)}</div>`;
+        content.innerHTML = `<div class="m-admin-loading" style="color:var(--danger)">⚠️ 加载失败：${escHtml(err.message)}</div>`;
     }
 }
 
-function renderAdminStats(data, body) {
+function renderAdminStats(data, content) {
     const s = data.summary;
     const users = data.users;
     let html = `
@@ -783,7 +842,7 @@ function renderAdminStats(data, body) {
         });
         html += '</tbody></table>';
     }
-    body.innerHTML = html;
+    content.innerHTML = html;
 }
 
 // ============================================================

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>技能管理 – LearnWithAI</title>
+    <link rel="stylesheet" href="/static/css/skills.css">
+</head>
+<body>
+
+<!-- ====== 登录页 ====== -->
+<div class="auth-page" id="authPage">
+    <div class="auth-card">
+        <div class="auth-logo">🌳</div>
+        <h1>LearnWithAI</h1>
+        <p class="auth-sub">技能管理</p>
+        <div class="auth-tabs">
+            <button class="auth-tab active" id="tabLogin">登录</button>
+            <button class="auth-tab" id="tabRegister">注册</button>
+        </div>
+        <form id="authForm" onsubmit="return false;">
+            <label>用户名</label>
+            <input type="text" id="authUsername" placeholder="输入用户名" required autocomplete="username">
+            <label>密码</label>
+            <input type="password" id="authPassword" placeholder="输入密码" required autocomplete="current-password">
+            <p class="auth-error" id="authError"></p>
+            <button type="submit" class="auth-btn" id="authBtn">登录</button>
+        </form>
+    </div>
+</div>
+
+<!-- ====== 主页面 ====== -->
+<div class="app-page" id="appPage" style="display:none;">
+    <!-- 顶部导航 -->
+    <header class="page-header">
+        <div class="header-left">
+            <span class="header-logo">🌳 LearnWithAI</span>
+            <span class="header-divider"></span>
+            <span class="header-title">⚙️ 技能管理</span>
+        </div>
+        <div class="header-right">
+            <span class="user-badge" id="userBadge"></span>
+            <a href="/static/index.html" class="header-link">← 返回主页</a>
+            <button class="logout-btn" id="logoutBtn" title="退出登录">🚪</button>
+        </div>
+    </header>
+
+    <!-- 主体 -->
+    <div class="page-body">
+        <!-- 左栏：全局技能 -->
+        <div class="skill-column">
+            <div class="column-header">
+                <span class="column-title">🌐 全局技能</span>
+                <button class="btn-primary btn-sm" id="btnCreateGlobal" style="display:none;">➕ 新建</button>
+            </div>
+            <div class="column-body" id="globalSkillsList">
+                <div class="loading-text">加载中...</div>
+            </div>
+        </div>
+
+        <!-- 右栏：个人技能 -->
+        <div class="skill-column">
+            <div class="column-header">
+                <span class="column-title">👤 我的技能</span>
+                <button class="btn-primary btn-sm" id="btnCreatePersonal">➕ 新建</button>
+            </div>
+            <div class="column-body" id="personalSkillsList">
+                <div class="loading-text">加载中...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====== 编辑模态框 ====== -->
+<div class="modal-overlay" id="editOverlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <span class="modal-title" id="editTitle">编辑技能</span>
+            <button class="modal-close" id="btnCloseEdit">✕</button>
+        </div>
+        <div class="modal-body">
+            <label>技能名称 *</label>
+            <input type="text" id="editName" placeholder="例如：代码审查" required>
+            <label>描述（选填）</label>
+            <input type="text" id="editDesc" placeholder="简要描述该技能的用途">
+            <label>提示词模板 *</label>
+            <textarea id="editTemplate" rows="6" placeholder="使用 {topic} 占位用户输入。例如：请帮我审查以下代码：\n\n{topic}"></textarea>
+            <p class="template-hint">💡 使用 <code>{topic}</code> 作为用户输入内容的占位符</p>
+            <div class="modal-actions">
+                <button id="btnEditCancel">取消</button>
+                <button class="btn-primary" id="btnEditSave">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/skills.js"></script>
+</body>
+</html>

@@ -527,16 +527,62 @@ html, body {
 
 .m-msg-gen-btn:hover { background: #6366f1; color: #fff; }
 
+/* ========== Mobile Skill Toolbar ========== */
+.m-skill-toolbar {
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+.m-skill-select {
+    width:auto;
+    max-width:160px;
+    height:26px;
+    font-size:12px;
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:0 6px;
+    background:var(--bg-white);
+    color:var(--text-primary);
+    outline:none;
+}
+.m-skill-select:focus {
+    border-color:var(--primary);
+}
+.m-skill-manage-link {
+    width:26px;
+    height:26px;
+    border:1px solid var(--border);
+    border-radius:6px;
+    background:var(--bg-white);
+    font-size:13px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-decoration:none;
+    color:var(--text-tertiary);
+    transition:all 0.2s;
+    flex-shrink:0;
+}
+.m-skill-manage-link:active {
+    border-color:var(--primary);
+    color:var(--primary);
+}
+
 /* Chat Input */
 .m-chat-input-area {
     padding: 8px 14px 12px;
     background: var(--bg-white);
     border-top: 1px solid var(--border-light);
     display: flex;
-    gap: 8px;
-    align-items: flex-end;
+    flex-direction: column;
+    gap: 6px;
     flex-shrink: 0;
     padding-bottom: calc(12px + var(--safe-bottom));
+}
+.m-chat-input-row {
+    display:flex;
+    gap:8px;
+    align-items:flex-end;
 }
 
 .m-chat-input-area textarea {
@@ -2218,3 +2264,32 @@ mark.m-rag-highlight { background: #fff3cd; color: #856404; padding: 0 2px; bord
 
 /* ========== Auth Page (hidden by default) ========== */
 .m-auth-page[style*="display: none"] + .m-app-shell { display: flex; }
+
+
+/* Admin tabs */
+.m-admin-tabs {
+    display:flex;
+    gap:0;
+    border-bottom:1px solid var(--border-light);
+    margin-bottom:12px;
+    flex-shrink:0;
+}
+.m-admin-tab {
+    flex:1;
+    padding:10px 12px;
+    font-size:13px;
+    border:none;
+    background:none;
+    color:var(--text-tertiary);
+    cursor:pointer;
+    border-bottom:2px solid transparent;
+}
+.m-admin-tab.active {
+    color:var(--primary);
+    border-bottom-color:var(--primary);
+    font-weight:500;
+}
+.m-admin-content {
+    flex:1;
+    overflow-y:auto;
+}

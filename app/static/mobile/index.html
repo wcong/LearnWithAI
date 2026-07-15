@@ -44,6 +44,7 @@
             <span class="m-header-text-btn" id="mUsernameBadge" style="display:none;"></span>
             <button class="m-header-action-btn" id="mBtnNewRoot" title="新建领域">➕</button>
             <button class="m-header-action-btn" id="mBtnRagSearch" title="搜索笔记">🔍</button>
+            <a href="/static/skills.html" class="m-header-action-btn" title="技能管理">⚙️</a>
             <button class="m-header-btn" id="mBtnAdmin" title="管理面板">📊</button>
             <button class="m-header-btn" id="mBtnLogout" title="退出">🚪</button>
             <a href="/static/index.html" style="font-size:11px;color:#c0c4cc;text-decoration:none;padding:2px 6px;">💻</a>
@@ -78,8 +79,16 @@
             </div>
         </div>
         <div class="m-chat-input-area">
-            <textarea id="mChatInput" rows="1" placeholder="选择领域后开始提问..." disabled></textarea>
-            <button id="mSendBtn" disabled>发送</button>
+            <div class="m-skill-toolbar">
+                <select id="mSkillSelect" class="m-skill-select">
+                    <option value="">无 Skill</option>
+                </select>
+                <a href="/static/skills.html" class="m-skill-manage-link" title="管理技能">⚙️</a>
+            </div>
+            <div class="m-chat-input-row">
+                <textarea id="mChatInput" rows="1" placeholder="选择领域后开始提问..." disabled></textarea>
+                <button id="mSendBtn" disabled>发送</button>
+            </div>
         </div>
     </div>
 
@@ -171,14 +180,19 @@
 <!-- ====== 模态框：Admin 统计 ====== -->
 <div class="m-modal-overlay" id="mModalAdmin">
     <div class="m-modal-header">
-        <span class="m-modal-header-title">📊 管理统计面板</span>
+        <span class="m-modal-header-title">📊 管理面板</span>
         <div>
             <button class="m-header-text-btn" id="mBtnAdminRefresh" style="margin-right:6px;">🔄 刷新</button>
             <button class="m-modal-close" id="mModalAdminClose">✕</button>
         </div>
     </div>
     <div class="m-modal-body" id="mAdminBody">
-        <div class="m-admin-loading">加载中...</div>
+        <div class="m-admin-tabs">
+            <button class="m-admin-tab active" data-tab="stats">📈 统计</button>
+        </div>
+        <div class="m-admin-content" id="mAdminContent">
+            <div class="m-admin-loading">加载中...</div>
+        </div>
     </div>
 </div>
 
