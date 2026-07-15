@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <title>LearnWithAI – AI 辅助深度学习</title>
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/mobile/css/style.css">
+</head>
+<body>
+
+<!-- ====== 登录页 ====== -->
+<div class="m-auth-page" id="mAuthPage">
+    <div class="m-auth-card">
+        <div class="m-auth-logo">🌳</div>
+        <h1>LearnWithAI</h1>
+        <p class="m-auth-sub">AI 辅助深度学习平台</p>
+        <div class="m-auth-tabs">
+            <button class="m-auth-tab active" id="mTabLogin">登录</button>
+            <button class="m-auth-tab" id="mTabRegister">注册</button>
+        </div>
+        <form id="mAuthForm" onsubmit="return false;">
+            <label>用户名</label>
+            <input type="text" id="mAuthUsername" placeholder="输入用户名" autocomplete="username">
+            <label>密码</label>
+            <input type="password" id="mAuthPassword" placeholder="输入密码" autocomplete="current-password">
+            <p class="m-auth-error" id="mAuthError"></p>
+            <button type="submit" class="m-auth-btn" id="mAuthBtn">登录</button>
+        </form>
+        <div style="margin-top:14px;font-size:12px;color:#909399;">
+            <a href="/static/index.html" style="color:#409eff;text-decoration:none;">桌面版</a>
+        </div>
+    </div>
+</div>
+
+<!-- ====== 主应用 TabBar 布局 ====== -->
+<div class="m-app-shell" id="mAppShell" style="display:none;">
+
+    <!-- 顶栏 -->
+    <header class="m-header" id="mHeader">
+        <span class="m-header-title" id="mHeaderTitle">📚 学习领域</span>
+        <div class="m-header-actions">
+            <span class="m-header-text-btn" id="mUsernameBadge" style="display:none;"></span>
+            <button class="m-header-btn" id="mBtnAdmin" title="管理面板">📊</button>
+            <button class="m-header-btn" id="mBtnLogout" title="退出">🚪</button>
+            <a href="/static/index.html" style="font-size:11px;color:#c0c4cc;text-decoration:none;padding:2px 6px;">💻</a>
+        </div>
+    </header>
+
+    <!-- 面板容器 -->
+    <div class="m-panels">
+
+        <!-- Tab 1: 知识领域 -->
+        <div class="m-panel active" id="mPanelAreas">
+            <div class="m-area-tree-panel">
+                <div class="m-area-toolbar">
+                    <button id="mBtnNewRoot">➕ 新建领域</button>
+                    <button id="mBtnRagSearch">🔍 搜索笔记</button>
+                </div>
+                <div class="m-area-scroll" id="mAreaTree"></div>
+            </div>
+        </div>
+
+        <!-- Tab 2: 对话 -->
+        <div class="m-panel" id="mPanelChat">
+            <div class="m-chat-panel">
+                <div class="m-chat-header">
+                    <div class="m-chat-area-title" id="mAreaTitle">请选择一个领域</div>
+                    <div class="m-chat-area-desc" id="mAreaDesc">点击左侧领域列表开始学习</div>
+                </div>
+                <div class="m-chat-messages" id="mChatMessages">
+                    <div class="m-empty-state">
+                        <div class="m-empty-icon">🌱</div>
+                        <p>选择一个学习领域，开启 AI 引导的深度学习之旅</p>
+                    </div>
+                </div>
+                <!-- Thinking 面板 -->
+                <div class="m-thinking-panel" id="mThinkingPanel" style="display:none;">
+                    <div class="m-thinking-header" id="mThinkingHeader">
+                        <span class="m-thinking-icon" id="mThinkingIcon">🤔</span>
+                        <span class="m-thinking-title" id="mThinkingTitle">AI 思考中...</span>
+                        <button class="m-thinking-toggle" id="mThinkingToggle" style="display:none;">▼</button>
+                    </div>
+                    <div class="m-thinking-body" id="mThinkingBody">
+                        <div class="m-thinking-content" id="mThinkingContent"></div>
+                    </div>
+                </div>
+                <div class="m-chat-input-area">
+                    <textarea id="mChatInput" rows="1" placeholder="选择领域后开始提问..." disabled></textarea>
+                    <button id="mSendBtn" disabled>发送</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: 笔记 -->
+        <div class="m-panel" id="mPanelNotes">
+            <div class="m-note-panel">
+                <div class="m-note-header">
+                    <div>
+                        <span class="m-note-title" id="mNoteTitle">📝 学习笔记</span>
+                        <span class="m-note-status" id="mNoteStatus"></span>
+                    </div>
+                    <div style="display:flex;gap:6px;">
+                        <button class="m-note-btn" id="mBtnEditNote" style="display:none;">✏️ 编辑</button>
+                        <button class="m-note-btn m-note-btn-primary" id="mBtnSaveNote" style="display:none;">💾 保存</button>
+                    </div>
+                </div>
+                <div class="m-note-view" id="mNoteView"></div>
+                <div class="m-note-editor" id="mNoteEditor" style="display:none;"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 底部 TabBar -->
+    <nav class="m-tabbar" id="mTabbar">
+        <button class="m-tabbar-item active" data-tab="areas">
+            <span class="m-tab-icon">📚</span>
+            <span class="m-tab-label">知识领域</span>
+        </button>
+        <button class="m-tabbar-item" data-tab="chat">
+            <span class="m-tab-icon">💬</span>
+            <span class="m-tab-label">对话</span>
+        </button>
+        <button class="m-tabbar-item" data-tab="notes">
+            <span class="m-tab-icon">📝</span>
+            <span class="m-tab-label">笔记</span>
+        </button>
+    </nav>
+</div>
+
+<!-- ====== 模态框：创建领域 ====== -->
+<div class="m-modal-overlay" id="mModalCreate">
+    <div class="m-modal-header">
+        <span class="m-modal-header-title" id="mModalCreateTitle">创建学习领域</span>
+        <button class="m-modal-close" id="mModalCreateClose">✕</button>
+    </div>
+    <div class="m-modal-body">
+        <div class="m-form-group">
+            <label>领域名称 *</label>
+            <input type="text" id="mCreateName" placeholder="例如：机器学习">
+        </div>
+        <div class="m-form-group">
+            <label>简介（选填）</label>
+            <textarea id="mCreateDesc" rows="3" placeholder="描述该领域的核心内容..."></textarea>
+        </div>
+        <input type="hidden" id="mCreateParentId" value="">
+        <div class="m-form-actions">
+            <button id="mCreateCancel">取消</button>
+            <button class="m-btn-primary" id="mCreateSubmit">创建</button>
+        </div>
+    </div>
+</div>
+
+<!-- ====== 模态框：AI 回复详情 ====== -->
+<div class="m-modal-overlay" id="mModalResponse">
+    <div class="m-modal-header">
+        <span class="m-modal-header-title" id="mModalResponseLabel">AI 回复详情</span>
+        <button class="m-modal-close" id="mModalResponseClose">✕</button>
+    </div>
+    <div class="m-modal-body">
+        <div class="m-response-body" id="mResponseBody"></div>
+    </div>
+</div>
+
+<!-- ====== 模态框：RAG 搜索 ====== -->
+<div class="m-modal-overlay" id="mModalRagSearch">
+    <div class="m-modal-header">
+        <span class="m-modal-header-title">🔍 RAG 笔记搜索</span>
+        <button class="m-modal-close" id="mModalRagClose">✕</button>
+    </div>
+    <div class="m-modal-body">
+        <div class="m-rag-search-input-row">
+            <input type="text" id="mRagInput" placeholder="输入关键词搜索你的笔记...">
+            <button id="mRagSearchBtn">搜索</button>
+        </div>
+        <div class="m-rag-results" id="mRagResults">
+            <div class="m-rag-empty">输入查询内容后点击"搜索"</div>
+        </div>
+    </div>
+</div>
+
+<!-- ====== 模态框：Admin 统计 ====== -->
+<div class="m-modal-overlay" id="mModalAdmin">
+    <div class="m-modal-header">
+        <span class="m-modal-header-title">📊 管理统计面板</span>
+        <div>
+            <button class="m-header-text-btn" id="mBtnAdminRefresh" style="margin-right:6px;">🔄 刷新</button>
+            <button class="m-modal-close" id="mModalAdminClose">✕</button>
+        </div>
+    </div>
+    <div class="m-modal-body" id="mAdminBody">
+        <div class="m-admin-loading">加载中...</div>
+    </div>
+</div>
+
+<!-- ====== 模态框：审查子领域 ====== -->
+<div class="m-modal-overlay" id="mModalExamine">
+    <div class="m-modal-header">
+        <span class="m-modal-header-title" id="mModalExamineLabel">🔍 审查子领域</span>
+        <button class="m-modal-close" id="mModalExamineClose">✕</button>
+    </div>
+    <div class="m-modal-body" id="mExamineBody">
+        <div class="m-examine-loading">⏳ AI 正在分析子领域...</div>
+    </div>
+</div>
+
+<!-- ====== 模态框：生成子领域 ====== -->
+<div class="m-modal-overlay" id="mModalGen">
+    <div class="m-modal-header">
+        <span class="m-modal-header-title">✨ 生成子领域</span>
+        <button class="m-modal-close" id="mModalGenClose">✕</button>
+    </div>
+    <div class="m-modal-body" id="mGenBody">
+        <div class="m-gen-loading">⏳ AI 正在根据聊天内容生成子领域建议...</div>
+    </div>
+</div>
+
+<!-- CDN -->
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="/static/mobile/js/common.js"></script>
+<script src="/static/mobile/js/app.js"></script>
+</body>
+</html>

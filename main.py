@@ -115,6 +115,20 @@ async def plan_page():
     return RedirectResponse(url="/static/plan.html")
 
 
+@app.get("/mobile")
+async def mobile_root():
+    """移动端主页面"""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/static/mobile/index.html")
+
+
+@app.get("/mobile/plan")
+async def mobile_plan_page():
+    """移动端 Plan Mode 页面"""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/static/mobile/plan.html")
+
+
 if __name__ == "__main__":
     is_dev = os.getenv("ENV", "development").lower() in ("dev", "development", "local")
     if is_dev:
