@@ -275,3 +275,25 @@ def list_sessions(area_id: int, db: Session = Depends(get_db)):
         LearningSession.area_id == area_id
     ).order_by(LearningSession.created_at.desc()).all()
     return [s.to_dict() for s in sessions]
+
+
+@router.delete("/message/{message_id}")
+def delete_message(message_id: int, db: Session = Depends(get_db),
+                   user: User = Depends(get_current_user)):
+    """删除某条聊天消息（及其关联的用量记录）"""
+    msg = db.query(ChatMessage).get(message_id)
+    if not msg:
+        raise HTTPException(404, "消息不存在")
+    area = db.query(Area).get(msg.area_id)
+    if not area or area.user_id != user.id:
+        raise HTTPException(403, "无权删除此消息")
+
+    # 删除关联的用量记录
+    db.query(UsageLog).filter(UsageLog.message_id == message_id).delete()
+    db.delete(msg)
+    db.commit()
+
+    # 清除该领域的 agent 缓存，下次聊天时重新加载历史
+    _agent_cache.pop(msg.area_id, None)
+
+    return {"ok": True}

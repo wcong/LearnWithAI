@@ -301,6 +301,9 @@ function bootApp() {
                 theme: 'snow',
                 placeholder: '在此处记录学习笔记…',
                 modules: {
+                    syntax: {
+                        hljs: window.hljs,
+                    },
                     toolbar: [
                         [{ header: [1,2,3,false] }],
                         ['bold','italic','underline','strike'],
@@ -624,10 +627,13 @@ function clearArea() {
     document.getElementById('chatInput').disabled = true;
     document.getElementById('sendBtn').disabled = true;
     // 清空笔记
-    if (quill) quill.setText('');
-    document.getElementById('noteView').innerHTML = '<div class="empty-note">选择一个领域查看笔记</div>';
-    document.getElementById('noteView').style.display = 'block';
-    document.getElementById('noteEditor').style.display = 'none';
+    if (quill) {
+        quill.setText('');
+        quill.enable(false);
+    }
+    document.getElementById('noteEditor').classList.add('ql-readonly');
+    document.getElementById('noteView').style.display = 'none';
+    document.getElementById('noteEditor').style.display = 'flex';
     document.getElementById('btnEditNote').style.display = 'none';
     document.getElementById('btnSaveNote').style.display = 'none';
     document.getElementById('noteStatus').textContent = '';
@@ -643,35 +649,30 @@ async function loadNote(areaId) {
         document.getElementById('noteTitle').textContent = `📝 笔记 · ${selectedAreaName}`;
         // 填充编辑器内容
         quill.root.innerHTML = note.content || '';
-        // 进入查看模式
+        // 进入查看模式（Quill 只读）
         _isEditingNote = false;
         showNoteView();
     } catch { /* ignore */ }
 }
 
 function showNoteView() {
-    const view = document.getElementById('noteView');
     const editor = document.getElementById('noteEditor');
-    const content = quill ? quill.root.innerHTML : '';
-
-    if (content && content !== '<p><br></p>') {
-        view.innerHTML = content;
-    } else {
-        view.innerHTML = '<div class="empty-note">暂无笔记，点击「✏️ 编辑」添加</div>';
-    }
-
-    view.style.display = 'block';
-    editor.style.display = 'none';
+    // Quill 置为只读，保持原有格式
+    quill.enable(false);
+    editor.classList.add('ql-readonly');
+    editor.style.display = 'flex';
+    document.getElementById('noteView').style.display = 'none';
     document.getElementById('btnEditNote').style.display = 'inline-block';
     document.getElementById('btnSaveNote').style.display = 'none';
     document.getElementById('noteStatus').textContent = '';
 }
 
 function showEditNote() {
-    const view = document.getElementById('noteView');
     const editor = document.getElementById('noteEditor');
-
-    view.style.display = 'none';
+    // Quill 启用编辑
+    quill.enable(true);
+    editor.classList.remove('ql-readonly');
+    document.getElementById('noteView').style.display = 'none';
     editor.style.display = 'flex';
     document.getElementById('btnEditNote').style.display = 'none';
     document.getElementById('btnSaveNote').style.display = 'inline-block';
@@ -696,7 +697,11 @@ async function saveNote() {
         });
         document.getElementById('noteStatus').textContent = '已保存';
         _isEditingNote = false;
-        showNoteView();
+        // 保存后切换为只读查看模式，不重新渲染，保持格式完全一致
+        quill.enable(false);
+        document.getElementById('noteEditor').classList.add('ql-readonly');
+        document.getElementById('btnEditNote').style.display = 'inline-block';
+        document.getElementById('btnSaveNote').style.display = 'none';
         setTimeout(() => {
             if (document.getElementById('noteStatus').textContent === '已保存')
                 document.getElementById('noteStatus').textContent = '';
@@ -724,6 +729,7 @@ function appendMessage(role, content, msgId) {
     if (empty) empty.remove();
     const div = document.createElement('div');
     div.className = `message ${role}`;
+    div.dataset.msgId = msgId;
     if (role === 'assistant') {
         // Markdown -> HTML 解析（带容错）
         let html;
@@ -740,6 +746,7 @@ function appendMessage(role, content, msgId) {
             + '<div class="msg-actions">'
             + '<button class="msg-sub-btn">➕ 添加子领域</button>'
             + '<button class="msg-gen-btn">✨ 生成子领域</button>'
+            + '<button class="msg-del-btn">🗑 删除</button>'
             + '</div>';
         div.querySelector('.click-hint').addEventListener('click', (e) => {
             e.stopPropagation(); showResponseModal(content, msgId);
@@ -752,11 +759,35 @@ function appendMessage(role, content, msgId) {
             e.stopPropagation();
             if (selectedAreaId) generateSubareas(selectedAreaId);
         });
+        div.querySelector('.msg-del-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteMessage(msgId, div);
+        });
     } else {
-        div.textContent = content;
+        div.innerHTML = '<span class="msg-user-text">' + escHtml(content) + '</span>'
+            + '<div class="msg-actions"><button class="msg-del-btn">🗑 删除</button></div>';
+        div.querySelector('.msg-del-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteMessage(msgId, div);
+        });
     }
     container.appendChild(div);
     container.scrollTop = container.scrollHeight;
+}
+
+async function deleteMessage(msgId, element) {
+    if (!msgId) return;
+    if (!confirm('确定删除此消息？')) return;
+    try {
+        await api(`/chat/message/${msgId}`, { method: 'DELETE' });
+        element.remove();
+        const container = document.getElementById('chatMessages');
+        if (container.children.length === 0) {
+            container.innerHTML = '<div class="empty-chat"><div class="icon">💬</div><p>暂无聊天记录，开始学习吧！</p></div>';
+        }
+    } catch (err) {
+        alert('删除失败：' + err.message);
+    }
 }
 
 async function sendMessage() {
@@ -810,9 +841,7 @@ async function sendMessage() {
 
         completeThinking();
 
-        if (resultData) {
-            await loadData();
-        } else {
+        if (!resultData) {
             appendMessage('assistant', '⚠️ AI 未返回有效回复');
         }
     } catch (err) {

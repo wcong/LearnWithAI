@@ -20,31 +20,38 @@ let _genThinkingBuffer = '';
 let _genThinkingRafId = null;
 
 // ============================================================
-//  Tab Switching
+//  Overlay Controls
 // ============================================================
 
-const TAB_NAMES = { areas: '📚 学习领域', chat: '💬 对话', notes: '📝 笔记' };
+let _activeOverlay = null; // 'area' | 'note' | null
 
-function switchTab(tabId) {
-    // TabBar items
-    document.querySelectorAll('.m-tabbar-item').forEach(el => {
-        el.classList.toggle('active', el.dataset.tab === tabId);
-    });
-    // Panels
-    const panels = document.querySelectorAll('.m-panel');
-    let activeIndex = -1;
-    panels.forEach((el, i) => {
-        const isActive = el.id === 'mPanel' + tabId.charAt(0).toUpperCase() + tabId.slice(1);
-        el.classList.toggle('active', isActive);
-        el.classList.toggle('prev', false);
-        if (isActive) activeIndex = i;
-    });
-    // Update header title
-    document.getElementById('mHeaderTitle').textContent = TAB_NAMES[tabId] || '';
-    // If switching to notes, refresh quill
-    if (tabId === 'notes' && quill && selectedAreaId) {
+function openAreaOverlay() {
+    if (_activeOverlay === 'area') { closeAllOverlays(); return; }
+    closeAllOverlays();
+    _activeOverlay = 'area';
+    document.getElementById('mOverlayMask').classList.add('visible');
+    document.getElementById('mAreaOverlay').classList.add('open');
+}
+
+function openNoteOverlay() {
+    if (_activeOverlay === 'note') { closeAllOverlays(); return; }
+    closeAllOverlays();
+    _activeOverlay = 'note';
+    document.getElementById('mOverlayMask').classList.add('visible');
+    document.getElementById('mNoteOverlay').classList.add('open');
+    if (quill && selectedAreaId) {
         setTimeout(() => quill.update(), 100);
     }
+}
+
+function closeAllOverlays() {
+    _activeOverlay = null;
+    const mask = document.getElementById('mOverlayMask');
+    if (mask) mask.classList.remove('visible');
+    const areaOv = document.getElementById('mAreaOverlay');
+    if (areaOv) areaOv.classList.remove('open');
+    const noteOv = document.getElementById('mNoteOverlay');
+    if (noteOv) noteOv.classList.remove('open');
 }
 
 // ============================================================
@@ -115,14 +122,6 @@ document.getElementById('mBtnLogout').addEventListener('click', () => {
 });
 
 // ============================================================
-//  TabBar click
-// ============================================================
-
-document.querySelectorAll('.m-tabbar-item').forEach(item => {
-    item.addEventListener('click', () => switchTab(item.dataset.tab));
-});
-
-// ============================================================
 //  Boot
 // ============================================================
 
@@ -159,6 +158,13 @@ function bootApp() {
     document.getElementById('mBtnAdmin').addEventListener('click', showAdminModal);
     document.getElementById('mModalExamineClose').addEventListener('click', closeExamineModal);
     document.getElementById('mModalGenClose').addEventListener('click', closeGenModal);
+
+    // Overlay toggle
+    document.getElementById('mBtnToggleAreas').addEventListener('click', openAreaOverlay);
+    document.getElementById('mBtnToggleNotes').addEventListener('click', openNoteOverlay);
+    document.getElementById('mCloseAreaOverlay').addEventListener('click', closeAllOverlays);
+    document.getElementById('mCloseNoteOverlay').addEventListener('click', closeAllOverlays);
+    document.getElementById('mOverlayMask').addEventListener('click', closeAllOverlays);
 
     // Thinking panel toggle
     document.getElementById('mThinkingHeader').addEventListener('click', (e) => {

@@ -23,7 +23,6 @@
     --danger: #F56C6C;
     --info: #909399;
     --safe-bottom: env(safe-area-inset-bottom, 0px);
-    --tabbar-height: 56px;
     --header-height: 48px;
 }
 
@@ -224,66 +223,13 @@ html, body {
     white-space: nowrap;
 }
 
-/* ========== Panel Container ========== */
-.m-panels {
-    flex: 1;
-    position: relative;
-    overflow: hidden;
-}
-
-.m-panel {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    background: var(--bg-main);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
-    transform: translateX(100%);
-    opacity: 0;
-    overflow: hidden;
-}
-
-.m-panel.active {
-    transform: translateX(0);
-    opacity: 1;
-}
-
-.m-panel.prev {
-    transform: translateX(-30%);
-    opacity: 0;
-}
-
-/* ========== Tab 1: Area Tree ========== */
-.m-area-tree-panel {
+/* ========== Main Content ========== */
+.m-chat-panel {
     flex: 1;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-}
-
-.m-area-toolbar {
-    padding: 8px 14px;
-    display: flex;
-    gap: 8px;
-    flex-shrink: 0;
-}
-
-.m-area-toolbar button {
-    flex: 1;
-    padding: 10px 0;
-    border: 1px dashed var(--border);
-    border-radius: 8px;
-    background: var(--bg-card);
-    cursor: pointer;
-    font-size: 13px;
-    color: var(--text-secondary);
-    transition: all 0.2s;
-}
-
-.m-area-toolbar button:hover {
-    background: var(--primary-light);
-    border-color: var(--primary);
-    color: var(--primary);
+    min-height: 0;
 }
 
 .m-area-scroll {
@@ -387,6 +333,24 @@ html, body {
 
 .m-empty-state .m-empty-icon { font-size: 36px; margin-bottom: 8px; }
 
+/* ========== Header Action Buttons (新建/搜索) ========== */
+.m-header-action-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: background 0.2s;
+}
+
+.m-header-action-btn:hover { background: var(--border); }
+
 /* ========== Tab 2: Chat ========== */
 .m-chat-panel {
     flex: 1;
@@ -396,21 +360,54 @@ html, body {
 }
 
 .m-chat-header {
-    padding: 10px 14px;
+    padding: 8px 10px;
     background: var(--bg-white);
     border-bottom: 1px solid var(--border-light);
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.m-chat-icon-btn {
+    width: 34px;
+    height: 34px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--text-secondary);
+    transition: background 0.2s, color 0.2s;
+}
+
+.m-chat-icon-btn:hover { background: var(--bg-main); color: var(--primary); }
+.m-chat-icon-btn:active { background: var(--border); }
+
+.m-chat-header-text {
+    flex: 1;
+    min-width: 0;
 }
 
 .m-chat-area-title {
     font-size: 15px;
     font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .m-chat-area-desc {
     font-size: 12px;
     color: var(--text-tertiary);
     margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .m-chat-messages {
@@ -664,50 +661,7 @@ html, body {
     50% { opacity: 0; }
 }
 
-/* ========== Tab 3: Notes ========== */
-.m-note-panel {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    background: var(--bg-white);
-}
-
-.m-note-header {
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--border-light);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.m-note-title {
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.m-note-status {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-left: 6px;
-}
-
-.m-note-btn {
-    padding: 6px 14px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--bg-white);
-    cursor: pointer;
-    font-size: 13px;
-    color: var(--text-secondary);
-    transition: all 0.2s;
-}
-
-.m-note-btn:hover { border-color: var(--primary); color: var(--primary); }
-.m-note-btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
-.m-note-btn-primary:hover { background: var(--primary-dark); color: #fff; }
-
+/* ========== Note View & Editor (used in overlay) ========== */
 .m-note-view {
     flex: 1;
     overflow-y: auto;
@@ -758,57 +712,182 @@ html, body {
     padding: 6px;
 }
 
-/* ========== TabBar ========== */
-.m-tabbar {
-    height: var(--tabbar-height);
-    background: var(--bg-white);
-    border-top: 1px solid var(--border-light);
-    display: flex;
-    flex-shrink: 0;
-    padding-bottom: var(--safe-bottom);
+/* ========== Overlay Mask ========== */
+.m-overlay-mask {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
-.m-tabbar-item {
+.m-overlay-mask.visible {
+    display: block;
+    opacity: 1;
+}
+
+/* ========== Side Overlay ========== */
+.m-side-overlay {
+    position: fixed;
+    top: var(--header-height);
+    bottom: 0;
+    z-index: 201;
+    width: 85%;
+    max-width: 340px;
+    background: var(--bg-white);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+}
+
+.m-side-overlay.left {
+    left: 0;
+    transform: translateX(-100%);
+    border-top-right-radius: 12px;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+}
+
+.m-side-overlay.right {
+    right: 0;
+    transform: translateX(100%);
+    border-top-left-radius: 12px;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+}
+
+.m-side-overlay.open {
+    transform: translateX(0);
+}
+
+.m-overlay-header {
+    height: var(--header-height);
+    background: var(--bg-white);
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    flex-shrink: 0;
+}
+
+.m-overlay-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.m-overlay-close {
+    width: 34px;
+    height: 34px;
+    border: none;
+    background: var(--bg-main);
+    border-radius: 8px;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.m-overlay-close:hover { background: var(--border); color: var(--danger); }
+
+.m-overlay-body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    padding: 6px 0;
+    overflow: hidden;
+    background: var(--bg-main);
+}
+
+/* Overlay scroll area */
+.m-side-overlay .m-area-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 10px 16px;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Note view in overlay */
+.m-side-overlay .m-note-view {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 16px;
+    font-size: 14px;
+    line-height: 1.7;
+    background: var(--bg-white);
+    min-height: 100%;
+}
+
+.m-side-overlay .m-note-editor {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg-white);
+}
+
+.m-side-overlay .m-note-editor .ql-container {
+    flex: 1;
+    overflow-y: auto;
+    font-size: 15px;
+}
+
+.m-side-overlay .m-note-editor .ql-editor {
+    min-height: 200px;
+    padding: 14px 16px;
+}
+
+.m-side-overlay .m-note-editor .ql-toolbar {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 6px;
+}
+
+.m-side-overlay .m-note-status {
+    font-size: 11px;
     color: var(--text-muted);
-    transition: color 0.2s;
-    position: relative;
+    margin-left: 6px;
 }
 
-.m-tabbar-item .m-tab-icon {
-    font-size: 22px;
-    line-height: 1;
+.m-side-overlay .m-note-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-white);
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    white-space: nowrap;
 }
 
-.m-tabbar-item .m-tab-label {
-    font-size: 10px;
-    line-height: 1;
+.m-side-overlay .m-note-btn:hover { border-color: var(--primary); color: var(--primary); }
+.m-side-overlay .m-note-btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.m-side-overlay .m-note-btn-primary:hover { background: var(--primary-dark); color: #fff; }
+
+.m-side-overlay .m-empty-note {
+    color: var(--text-muted);
+    font-size: 13px;
+    text-align: center;
+    padding: 40px 0;
 }
 
-.m-tabbar-item.active {
-    color: var(--primary);
+.m-side-overlay .m-empty-state {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 40px 16px;
+    font-size: 13px;
 }
 
-.m-tabbar-item.active::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 20px;
-    height: 2px;
-    background: var(--primary);
-    border-radius: 0 0 2px 2px;
-}
+.m-side-overlay .m-empty-state .m-empty-icon { font-size: 36px; margin-bottom: 8px; }
 
 /* ========== Fullscreen Modal (slide up from bottom) ========== */
 .m-modal-overlay {

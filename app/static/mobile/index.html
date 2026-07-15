@@ -34,100 +34,87 @@
     </div>
 </div>
 
-<!-- ====== 主应用 TabBar 布局 ====== -->
+<!-- ====== 主应用（对话主视图 + 覆盖层） ====== -->
 <div class="m-app-shell" id="mAppShell" style="display:none;">
 
     <!-- 顶栏 -->
     <header class="m-header" id="mHeader">
-        <span class="m-header-title" id="mHeaderTitle">📚 学习领域</span>
+        <span class="m-header-title" id="mHeaderTitle">💬 对话</span>
         <div class="m-header-actions">
             <span class="m-header-text-btn" id="mUsernameBadge" style="display:none;"></span>
+            <button class="m-header-action-btn" id="mBtnNewRoot" title="新建领域">➕</button>
+            <button class="m-header-action-btn" id="mBtnRagSearch" title="搜索笔记">🔍</button>
             <button class="m-header-btn" id="mBtnAdmin" title="管理面板">📊</button>
             <button class="m-header-btn" id="mBtnLogout" title="退出">🚪</button>
             <a href="/static/index.html" style="font-size:11px;color:#c0c4cc;text-decoration:none;padding:2px 6px;">💻</a>
         </div>
     </header>
 
-    <!-- 面板容器 -->
-    <div class="m-panels">
-
-        <!-- Tab 1: 知识领域 -->
-        <div class="m-panel active" id="mPanelAreas">
-            <div class="m-area-tree-panel">
-                <div class="m-area-toolbar">
-                    <button id="mBtnNewRoot">➕ 新建领域</button>
-                    <button id="mBtnRagSearch">🔍 搜索笔记</button>
-                </div>
-                <div class="m-area-scroll" id="mAreaTree"></div>
+    <!-- 对话主面板 -->
+    <div class="m-chat-panel" id="mPanelChat">
+        <div class="m-chat-header">
+            <button class="m-chat-icon-btn" id="mBtnToggleAreas" title="领域列表">📁</button>
+            <div class="m-chat-header-text">
+                <div class="m-chat-area-title" id="mAreaTitle">请选择一个领域</div>
+                <div class="m-chat-area-desc" id="mAreaDesc">选择一个领域开始学习</div>
+            </div>
+            <button class="m-chat-icon-btn" id="mBtnToggleNotes" title="笔记">📝</button>
+        </div>
+        <div class="m-chat-messages" id="mChatMessages">
+            <div class="m-empty-state">
+                <div class="m-empty-icon">🌱</div>
+                <p>选择一个学习领域，开启 AI 引导的深度学习之旅</p>
             </div>
         </div>
-
-        <!-- Tab 2: 对话 -->
-        <div class="m-panel" id="mPanelChat">
-            <div class="m-chat-panel">
-                <div class="m-chat-header">
-                    <div class="m-chat-area-title" id="mAreaTitle">请选择一个领域</div>
-                    <div class="m-chat-area-desc" id="mAreaDesc">点击左侧领域列表开始学习</div>
-                </div>
-                <div class="m-chat-messages" id="mChatMessages">
-                    <div class="m-empty-state">
-                        <div class="m-empty-icon">🌱</div>
-                        <p>选择一个学习领域，开启 AI 引导的深度学习之旅</p>
-                    </div>
-                </div>
-                <!-- Thinking 面板 -->
-                <div class="m-thinking-panel" id="mThinkingPanel" style="display:none;">
-                    <div class="m-thinking-header" id="mThinkingHeader">
-                        <span class="m-thinking-icon" id="mThinkingIcon">🤔</span>
-                        <span class="m-thinking-title" id="mThinkingTitle">AI 思考中...</span>
-                        <button class="m-thinking-toggle" id="mThinkingToggle" style="display:none;">▼</button>
-                    </div>
-                    <div class="m-thinking-body" id="mThinkingBody">
-                        <div class="m-thinking-content" id="mThinkingContent"></div>
-                    </div>
-                </div>
-                <div class="m-chat-input-area">
-                    <textarea id="mChatInput" rows="1" placeholder="选择领域后开始提问..." disabled></textarea>
-                    <button id="mSendBtn" disabled>发送</button>
-                </div>
+        <!-- Thinking 面板 -->
+        <div class="m-thinking-panel" id="mThinkingPanel" style="display:none;">
+            <div class="m-thinking-header" id="mThinkingHeader">
+                <span class="m-thinking-icon" id="mThinkingIcon">🤔</span>
+                <span class="m-thinking-title" id="mThinkingTitle">AI 思考中...</span>
+                <button class="m-thinking-toggle" id="mThinkingToggle" style="display:none;">▼</button>
+            </div>
+            <div class="m-thinking-body" id="mThinkingBody">
+                <div class="m-thinking-content" id="mThinkingContent"></div>
             </div>
         </div>
-
-        <!-- Tab 3: 笔记 -->
-        <div class="m-panel" id="mPanelNotes">
-            <div class="m-note-panel">
-                <div class="m-note-header">
-                    <div>
-                        <span class="m-note-title" id="mNoteTitle">📝 学习笔记</span>
-                        <span class="m-note-status" id="mNoteStatus"></span>
-                    </div>
-                    <div style="display:flex;gap:6px;">
-                        <button class="m-note-btn" id="mBtnEditNote" style="display:none;">✏️ 编辑</button>
-                        <button class="m-note-btn m-note-btn-primary" id="mBtnSaveNote" style="display:none;">💾 保存</button>
-                    </div>
-                </div>
-                <div class="m-note-view" id="mNoteView"></div>
-                <div class="m-note-editor" id="mNoteEditor" style="display:none;"></div>
-            </div>
+        <div class="m-chat-input-area">
+            <textarea id="mChatInput" rows="1" placeholder="选择领域后开始提问..." disabled></textarea>
+            <button id="mSendBtn" disabled>发送</button>
         </div>
-
     </div>
 
-    <!-- 底部 TabBar -->
-    <nav class="m-tabbar" id="mTabbar">
-        <button class="m-tabbar-item active" data-tab="areas">
-            <span class="m-tab-icon">📚</span>
-            <span class="m-tab-label">知识领域</span>
-        </button>
-        <button class="m-tabbar-item" data-tab="chat">
-            <span class="m-tab-icon">💬</span>
-            <span class="m-tab-label">对话</span>
-        </button>
-        <button class="m-tabbar-item" data-tab="notes">
-            <span class="m-tab-icon">📝</span>
-            <span class="m-tab-label">笔记</span>
-        </button>
-    </nav>
+    <!-- 遮罩层 -->
+    <div class="m-overlay-mask" id="mOverlayMask"></div>
+
+    <!-- 左侧覆盖层：领域树 -->
+    <div class="m-side-overlay left" id="mAreaOverlay">
+        <div class="m-overlay-header">
+            <span class="m-overlay-title">📚 学习领域</span>
+            <button class="m-overlay-close" id="mCloseAreaOverlay">✕</button>
+        </div>
+        <div class="m-overlay-body">
+            <div class="m-area-scroll" id="mAreaTree"></div>
+        </div>
+    </div>
+
+    <!-- 右侧覆盖层：笔记 -->
+    <div class="m-side-overlay right" id="mNoteOverlay">
+        <div class="m-overlay-header">
+            <div>
+                <span class="m-overlay-title" id="mNoteTitle">📝 学习笔记</span>
+                <span class="m-note-status" id="mNoteStatus"></span>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;">
+                <button class="m-note-btn" id="mBtnEditNote" style="display:none;">✏️ 编辑</button>
+                <button class="m-note-btn m-note-btn-primary" id="mBtnSaveNote" style="display:none;">💾 保存</button>
+                <button class="m-overlay-close" id="mCloseNoteOverlay">✕</button>
+            </div>
+        </div>
+        <div class="m-overlay-body">
+            <div class="m-note-view" id="mNoteView"></div>
+            <div class="m-note-editor" id="mNoteEditor" style="display:none;"></div>
+        </div>
+    </div>
 </div>
 
 <!-- ====== 模态框：创建领域 ====== -->
