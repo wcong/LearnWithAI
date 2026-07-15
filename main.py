@@ -27,7 +27,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.database import init_db, get_db_type
-from app.routes import areas, chat, auth, notes, rag, admin
+from app.routes import areas, chat, auth, notes, rag, admin, plan
 
 # ── 日志配置 ──────────────────────────────
 logging.basicConfig(
@@ -98,6 +98,7 @@ app.include_router(chat.router)
 app.include_router(notes.router)
 app.include_router(rag.router)
 app.include_router(admin.router)
+app.include_router(plan.router)
 
 
 @app.get("/")
@@ -105,6 +106,13 @@ async def root():
     """重定向到主页面"""
     from fastapi.responses import RedirectResponse
     return RedirectResponse(url="/static/index.html")
+
+
+@app.get("/plan")
+async def plan_page():
+    """Plan Mode 深度学习规划页面"""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/static/plan.html")
 
 
 if __name__ == "__main__":

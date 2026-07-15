@@ -39,6 +39,7 @@ TABLE_ORDER = [
     "chat_messages",
     "learning_sessions",
     "usage_logs",
+    "login_history",
 ]
 
 

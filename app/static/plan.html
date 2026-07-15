@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan Mode – 深度学习规划</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="plan-page">
+
+<!-- ====== 顶部导航栏 ====== -->
+<header class="plan-header" id="planHeader">
+    <div class="plan-header-left">
+        <span class="plan-logo">🧠 Plan Mode</span>
+    </div>
+    <div class="plan-header-right">
+        <span class="plan-user-badge" id="planUserBadge"></span>
+        <a href="/static/index.html" class="plan-back-btn">← 返回主页面</a>
+    </div>
+</header>
+
+<!-- ====== 主容器 ====== -->
+<div class="plan-container">
+
+    <!-- ====== 输入区（探索前） ====== -->
+    <div class="plan-input-section" id="planInputSection">
+        <div class="plan-input-card">
+            <h1 class="plan-input-title">开始你的深度学习规划</h1>
+            <p class="plan-input-subtitle">输入一个领域名称，AI 将自动递归探索并生成从宏观到微观的完整学习路径</p>
+            <div class="plan-input-row">
+                <input type="text" class="plan-input" id="planDomainInput"
+                       placeholder="例如：量子计算、CRISPR基因编辑、强化学习..."
+                       autofocus>
+                <button class="plan-start-btn" id="planStartBtn">开始探索</button>
+            </div>
+            <div class="plan-input-hints">
+                <span>热门领域：</span>
+                <button class="plan-hint-btn" data-domain="Transformer 架构优化">Transformer 架构优化</button>
+                <button class="plan-hint-btn" data-domain="CRISPR 基因编辑技术">CRISPR 基因编辑技术</button>
+                <button class="plan-hint-btn" data-domain="强化学习在机器人控制中的应用">强化学习在机器人控制中的应用</button>
+                <button class="plan-hint-btn" data-domain="固态电池电解质材料">固态电池电解质材料</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== 探索视图（探索中/后） ====== -->
+    <div class="plan-explore-view" id="planExploreView" style="display:none;">
+
+        <!-- 状态栏 -->
+        <div class="plan-status-bar" id="planStatusBar">
+            <div class="plan-status-item">
+                <span class="plan-status-label">当前深度</span>
+                <span class="plan-status-value" id="statusDepth">0 / 10</span>
+            </div>
+            <div class="plan-status-item">
+                <span class="plan-status-label">已探索领域</span>
+                <span class="plan-status-value" id="statusAreas">0</span>
+            </div>
+            <div class="plan-status-item">
+                <span class="plan-status-label">已生成消息</span>
+                <span class="plan-status-value" id="statusMessages">0</span>
+            </div>
+            <div class="plan-status-item plan-status-current">
+                <span class="plan-status-label">当前状态</span>
+                <span class="plan-status-value" id="statusText">
+                    <span class="status-dot pulse"></span> 准备中...
+                </span>
+            </div>
+        </div>
+
+        <!-- 主内容区：左树 + 右消息 -->
+        <div class="plan-content-area">
+            <!-- 左侧：树形视图 -->
+            <div class="plan-tree-panel" id="planTreePanel">
+                <div class="plan-tree-header">📂 领域树</div>
+                <div class="plan-tree-body" id="planTreeBody">
+                    <div class="plan-tree-empty">等待探索开始...</div>
+                </div>
+            </div>
+
+            <!-- 右侧：消息流 -->
+            <div class="plan-message-panel" id="planMessagePanel">
+                <div class="plan-message-header">💬 探索过程</div>
+                <div class="plan-message-body" id="planMessageBody">
+                    <div class="plan-message-empty">AI 正在探索，消息将在此展示...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI 思考面板 -->
+        <div class="plan-thinking-panel" id="planThinkingPanel" style="display:none;">
+            <div class="plan-thinking-header" id="planThinkingHeader">
+                <span class="plan-thinking-icon" id="planThinkingIcon">🤔</span>
+                <span class="plan-thinking-title" id="planThinkingTitle">AI 思考中...</span>
+                <button class="plan-thinking-toggle" id="planThinkingToggle" style="display:none;">▼</button>
+            </div>
+            <div class="plan-thinking-body" id="planThinkingBody">
+                <div class="plan-thinking-content" id="planThinkingContent"></div>
+            </div>
+        </div>
+
+        <!-- 结果展示区（完成后） -->
+        <div class="plan-result-section" id="planResultSection" style="display:none;">
+            <div class="plan-result-cards">
+                <div class="plan-result-card">
+                    <div class="plan-result-icon">📚</div>
+                    <div class="plan-result-num" id="resultAreas">0</div>
+                    <div class="plan-result-label">总领域数</div>
+                </div>
+                <div class="plan-result-card">
+                    <div class="plan-result-icon">💬</div>
+                    <div class="plan-result-num" id="resultMessages">0</div>
+                    <div class="plan-result-label">总消息数</div>
+                </div>
+                <div class="plan-result-card">
+                    <div class="plan-result-icon">📊</div>
+                    <div class="plan-result-num" id="resultDepth">0</div>
+                    <div class="plan-result-label">最大深度</div>
+                </div>
+            </div>
+            <div class="plan-result-actions">
+                <button class="plan-restart-btn" id="planRestartBtn">🔄 重新探索</button>
+                <a href="/static/index.html" class="plan-view-tree-btn">🌳 查看完整领域树</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====== 登录模态框 ====== -->
+<div class="plan-auth-overlay" id="planAuthOverlay">
+    <div class="plan-auth-card">
+        <div class="plan-auth-logo">🧠</div>
+        <h2 class="plan-auth-title">Plan Mode</h2>
+        <p class="plan-auth-sub">深度学习规划需要先登录</p>
+        <div class="plan-auth-tabs">
+            <button class="plan-auth-tab active" id="planTabLogin">登录</button>
+            <button class="plan-auth-tab" id="planTabRegister">注册</button>
+        </div>
+        <form id="planAuthForm" onsubmit="return false;">
+            <label class="plan-auth-label">用户名</label>
+            <input type="text" class="plan-auth-input" id="planAuthUsername" placeholder="输入用户名" required autocomplete="username">
+            <label class="plan-auth-label">密码</label>
+            <input type="password" class="plan-auth-input" id="planAuthPassword" placeholder="输入密码" required autocomplete="current-password">
+            <p class="plan-auth-error" id="planAuthError"></p>
+            <button type="submit" class="plan-auth-btn" id="planAuthBtn">登录</button>
+        </form>
+    </div>
+</div>
+
+<!-- CDN -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="/static/js/plan.js"></script>
+</body>
+</html>

@@ -16,6 +16,9 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     areas = relationship("Area", back_populates="user", cascade="all, delete-orphan")
+    logins = relationship("LoginHistory", back_populates="user",
+                          order_by="LoginHistory.login_at.desc()",
+                          cascade="all, delete-orphan")
 
     def to_dict(self) -> dict:
         return {"id": self.id, "username": self.username,
@@ -199,4 +202,33 @@ class AreaAnalysis(Base):
             "sub_area_summaries": json.loads(self.sub_area_summaries) if self.sub_area_summaries else [],
             "missing_suggestions": json.loads(self.missing_suggestions) if self.missing_suggestions else [],
             "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class LoginHistory(Base):
+    """用户登录历史记录"""
+    __tablename__ = "login_history"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    login_at = Column(DateTime, default=datetime.utcnow, index=True)
+    ip_address_masked = Column(String(50), default="")
+    location = Column(Text, default="")           # JSON: country, regionName, city, lat, lon, isp
+    user_agent = Column(String(500), default="")
+    success = Column(Integer, default=1)          # 1=成功  0=失败
+    failure_reason = Column(String(200), default="")
+
+    user = relationship("User", back_populates="logins")
+
+    def to_dict(self) -> dict:
+        import json
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "login_at": self.login_at.isoformat() if self.login_at else None,
+            "ip_address_masked": self.ip_address_masked,
+            "location": json.loads(self.location) if self.location else {},
+            "user_agent": self.user_agent,
+            "success": bool(self.success),
+            "failure_reason": self.failure_reason,
         }

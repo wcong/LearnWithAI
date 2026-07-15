@@ -53,23 +53,7 @@
         <div class="area-tree" id="areaTree"></div>
     </aside>
 
-    <!-- 中栏：学习笔记 -->
-    <main class="note-panel">
-        <div class="note-header">
-            <div>
-                <span class="note-title" id="noteTitle">📝 学习笔记</span>
-                <span class="note-status" id="noteStatus"></span>
-            </div>
-            <div style="display:flex;gap:6px;">
-                <button class="note-btn" id="btnEditNote" style="display:none;">✏️ 编辑</button>
-                <button class="note-btn note-btn-primary" id="btnSaveNote" style="display:none;">💾 保存</button>
-            </div>
-        </div>
-        <div class="note-view" id="noteView"></div>
-        <div class="note-editor" id="noteEditor" style="display:none;"></div>
-    </main>
-
-    <!-- 右栏：聊天 -->
+    <!-- 中栏：聊天 -->
     <main class="chat-panel">
         <div class="chat-area-info">
             <div>
@@ -98,6 +82,22 @@
             <textarea id="chatInput" rows="1" placeholder="选择左侧领域后开始提问..." disabled></textarea>
             <button id="sendBtn" disabled>发送</button>
         </div>
+    </main>
+
+    <!-- 右栏：学习笔记 -->
+    <main class="note-panel">
+        <div class="note-header">
+            <div>
+                <span class="note-title" id="noteTitle">📝 学习笔记</span>
+                <span class="note-status" id="noteStatus"></span>
+            </div>
+            <div style="display:flex;gap:6px;">
+                <button class="note-btn" id="btnEditNote" style="display:none;">✏️ 编辑</button>
+                <button class="note-btn note-btn-primary" id="btnSaveNote" style="display:none;">💾 保存</button>
+            </div>
+        </div>
+        <div class="note-view" id="noteView"></div>
+        <div class="note-editor" id="noteEditor" style="display:none;"></div>
     </main>
 </div>
 

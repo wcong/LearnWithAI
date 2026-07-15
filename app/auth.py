@@ -1,5 +1,6 @@
 """JWT 认证工具（密码哈希用 hashlib，避免 bcrypt 兼容问题）"""
 import hashlib
+import ipaddress
 import secrets
 from datetime import datetime, timedelta, timezone
 
@@ -13,6 +14,26 @@ from app.database import get_db
 from app.models import User
 
 bearer_scheme = HTTPBearer(auto_error=False)
+
+
+def mask_ip(ip_str: str | None) -> str:
+    """对 IP 地址做脱敏处理，保护用户隐私"""
+    if not ip_str:
+        return "unknown"
+    try:
+        ip = ipaddress.ip_address(ip_str)
+    except ValueError:
+        return "invalid"
+    if ip.is_loopback or ip.is_private:
+        return "local"
+    if isinstance(ip, ipaddress.IPv4Address):
+        parts = ip_str.split(".")
+        return ".".join(parts[:3]) + ".x"
+    # IPv6: 保留前 80 位（前 5 组）
+    expanded = ip.exploded
+    groups = expanded.split(":")
+    masked = ":".join(groups[:5]) + "::x"
+    return masked
 
 
 def hash_password(password: str) -> str:
