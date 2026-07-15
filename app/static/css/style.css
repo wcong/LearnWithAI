@@ -377,6 +377,30 @@ html, body {
 .empty-chat .icon { font-size:36px; margin-bottom:8px; }
 .empty-chat p { font-size:13px; }
 
+/* 父领域 / 当前领域分割线 */
+.chat-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    color: #909399;
+    font-size: 11px;
+    user-select: none;
+    flex-shrink: 0;
+}
+.chat-divider::before,
+.chat-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #dcdfe6;
+}
+.chat-divider span {
+    white-space: nowrap;
+    flex-shrink: 0;
+    color: #909399;
+}
+
 .message { max-width:85%; border-radius:10px; line-height:1.5; font-size:13px; word-break:break-word; }
 .message.user { align-self:flex-end; background:#409eff; color:#fff; border-bottom-right-radius:3px; padding:8px 12px; white-space:pre-wrap; }
 .message.assistant { align-self:flex-start; background:#fff; border:1px solid #e4e7ed; border-bottom-left-radius:3px; color:#303133; padding:8px 12px; }

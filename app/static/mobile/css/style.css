@@ -333,6 +333,30 @@ html, body {
 
 .m-empty-state .m-empty-icon { font-size: 36px; margin-bottom: 8px; }
 
+/* 父领域 / 当前领域分割线（移动端） */
+.m-chat-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    color: var(--text-tertiary);
+    font-size: 11px;
+    user-select: none;
+    flex-shrink: 0;
+}
+.m-chat-divider::before,
+.m-chat-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+.m-chat-divider span {
+    white-space: nowrap;
+    flex-shrink: 0;
+    color: var(--text-tertiary);
+}
+
 /* ========== Header Action Buttons (新建/搜索) ========== */
 .m-header-action-btn {
     width: 32px;

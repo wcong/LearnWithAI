@@ -770,9 +770,28 @@ async function loadHistory(areaId) {
     try {
         const messages = await api(`/chat/history/${areaId}`);
         if (messages.length === 0) return;
-        document.getElementById('chatMessages').innerHTML = '';
-        messages.forEach(m => appendMessage(m.role, m.content, m.id));
-        document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+        const container = document.getElementById('chatMessages');
+        container.innerHTML = '';
+
+        // 分离父领域和当前领域的消息
+        const parentMessages = messages.filter(m => m.area_id !== areaId);
+        const currentMessages = messages.filter(m => m.area_id === areaId);
+
+        // 先渲染父领域的问答
+        parentMessages.forEach(m => appendMessage(m.role, m.content, m.id));
+
+        // 如果两个领域都有消息，添加分割线
+        if (parentMessages.length > 0 && currentMessages.length > 0) {
+            const divider = document.createElement('div');
+            divider.className = 'chat-divider';
+            divider.innerHTML = '<span>📖 父领域问答</span>';
+            container.appendChild(divider);
+        }
+
+        // 再渲染当前领域的问答
+        currentMessages.forEach(m => appendMessage(m.role, m.content, m.id));
+
+        container.scrollTop = container.scrollHeight;
     } catch { /* ignore */ }
 }
 
