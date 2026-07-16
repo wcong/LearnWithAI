@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LearnWithAI – AI 辅助深度学习</title>
     <!-- Quill.js 富文本编辑器 -->
-    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+    <link href="/static/css/lib/quill.snow.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
@@ -57,10 +57,11 @@
     <!-- 中栏：聊天 -->
     <main class="chat-panel">
         <div class="chat-area-info">
-            <div>
+            <div class="area-info-left">
                 <div class="area-title" id="areaTitle">请选择一个领域</div>
                 <div class="area-desc" id="areaDesc">点击左侧领域列表开始学习</div>
             </div>
+            <button class="area-edit-btn" id="btnEditArea" style="display:none;" title="编辑领域">✏️</button>
         </div>
         <div class="chat-messages" id="chatMessages">
             <div class="empty-chat">
@@ -193,12 +194,12 @@
 </div>
 
 <!-- highlight.js 代码语法高亮 -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<link rel="stylesheet" href="/static/css/lib/atom-one-dark.min.css">
+<script src="/static/js/lib/highlight.min.js"></script>
 
-<!-- CDN -->
-<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<!-- 本地库 -->
+<script src="/static/js/lib/quill.js"></script>
+<script src="/static/js/lib/marked.min.js"></script>
 <script src="/static/js/app.js"></script>
 </body>
 </html>

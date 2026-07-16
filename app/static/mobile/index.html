@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="format-detection" content="telephone=no">
     <title>LearnWithAI – AI 辅助深度学习</title>
-    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+    <link href="/static/css/lib/quill.snow.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/mobile/css/style.css">
 </head>
 <body>
@@ -59,6 +59,7 @@
                 <div class="m-chat-area-title" id="mAreaTitle">请选择一个领域</div>
                 <div class="m-chat-area-desc" id="mAreaDesc">选择一个领域开始学习</div>
             </div>
+            <button class="m-chat-icon-btn" id="mBtnEditArea" style="display:none;" title="编辑领域">✏️</button>
             <button class="m-chat-icon-btn" id="mBtnToggleNotes" title="笔记">📝</button>
         </div>
         <div class="m-chat-messages" id="mChatMessages">
@@ -142,6 +143,7 @@
             <textarea id="mCreateDesc" rows="3" placeholder="描述该领域的核心内容..."></textarea>
         </div>
         <input type="hidden" id="mCreateParentId" value="">
+        <input type="hidden" id="mEditId" value="">
         <div class="m-form-actions">
             <button id="mCreateCancel">取消</button>
             <button class="m-btn-primary" id="mCreateSubmit">创建</button>
@@ -218,9 +220,9 @@
     </div>
 </div>
 
-<!-- CDN -->
-<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<!-- 本地库 -->
+<script src="/static/js/lib/quill.js"></script>
+<script src="/static/js/lib/marked.min.js"></script>
 <script src="/static/mobile/js/common.js"></script>
 <script src="/static/mobile/js/app.js"></script>
 </body>

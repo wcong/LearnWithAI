@@ -2,8 +2,8 @@
    LearnWithAI Mobile – 移动端专有样式
    ============================================================ */
 
-/* Tailwind CSS via CDN */
-@import url('https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css');
+/* Tailwind CSS via local */
+@import url('../../css/lib/tailwind.min.css');
 
 :root {
     --primary: #409EFF;

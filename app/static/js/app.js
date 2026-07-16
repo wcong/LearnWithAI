@@ -256,6 +256,12 @@ function bootApp() {
 
     document.getElementById('btnNewRootArea').addEventListener('click', () => showCreateModal(null, ''));
     document.getElementById('btnRagSearch').addEventListener('click', showRagSearchModal);
+    document.getElementById('btnEditArea').addEventListener('click', () => {
+        if (selectedAreaId && selectedAreaName !== undefined) {
+            const desc = document.getElementById('areaDesc').textContent;
+            showEditAreaModal(selectedAreaId, selectedAreaName, desc === '暂无简介' ? '' : desc);
+        }
+    });
     document.getElementById('sendBtn').addEventListener('click', sendMessage);
     document.getElementById('chatInput').addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -633,6 +639,7 @@ function selectArea(nodeData) {
     // 聊天
     document.getElementById('areaTitle').textContent = nodeData.name;
     document.getElementById('areaDesc').textContent = nodeData.description || '暂无简介';
+    document.getElementById('btnEditArea').style.display = 'flex';
     document.getElementById('chatMessages').innerHTML =
         `<div class="empty-chat"><div class="icon">💬</div><p>已进入 <strong>${nodeData.name}</strong>，开始学习吧！</p></div>`;
     document.getElementById('chatInput').disabled = false;
@@ -650,6 +657,7 @@ function selectArea(nodeData) {
 function clearArea() {
     document.getElementById('areaTitle').textContent = '请选择一个领域';
     document.getElementById('areaDesc').textContent = '';
+    document.getElementById('btnEditArea').style.display = 'none';
     document.getElementById('chatMessages').innerHTML =
         `<div class="empty-chat"><div class="icon">🌱</div><p>选择一个学习领域，开启 AI 引导的深度学习之旅</p></div>`;
     document.getElementById('chatInput').disabled = true;
@@ -963,23 +971,34 @@ function closeResponseModal() { document.getElementById('responseOverlay').class
 // ============================================================
 
 function showCreateModal(parentId, parentName) {
-    document.getElementById('modalTitle').textContent = parentId
-        ? `在「${parentName}」下创建子领域` : '创建顶级学习领域';
+    showAreaModal({ mode: 'create', parentId, parentName });
+}
+
+function showEditAreaModal(editId, editName, editDesc) {
+    showAreaModal({ mode: 'edit', editId, editName, editDesc });
+}
+
+function showAreaModal(opts) {
+    const isEdit = opts.mode === 'edit';
+    document.getElementById('modalTitle').textContent = isEdit
+        ? '编辑学习领域'
+        : (opts.parentId ? `在「${opts.parentName}」下创建子领域` : '创建顶级学习领域');
     document.getElementById('modalForm').innerHTML = `
         <label>领域名称 *</label>
-        <input type="text" id="modalName" placeholder="例如：机器学习" required>
+        <input type="text" id="modalName" placeholder="例如：机器学习" required value="${isEdit ? escHtml(opts.editName || '') : ''}">
         <label>简介（选填）</label>
-        <textarea id="modalDesc" rows="3" placeholder="描述该领域的核心内容..."></textarea>
-        <input type="hidden" id="modalParentId" value="${parentId || ''}">
+        <textarea id="modalDesc" rows="3" placeholder="描述该领域的核心内容...">${isEdit ? escHtml(opts.editDesc || '') : ''}</textarea>
+        <input type="hidden" id="modalParentId" value="${opts.parentId || ''}">
+        <input type="hidden" id="modalEditId" value="${opts.editId || ''}">
         <div class="modal-actions">
             <button type="button" id="btnModalCancel">取消</button>
-            <button type="button" class="btn-primary" id="btnModalSubmit">创建</button>
+            <button type="button" class="btn-primary" id="btnModalSubmit">${isEdit ? '保存' : '创建'}</button>
         </div>`;
     document.getElementById('modalOverlay').classList.add('active');
     setTimeout(() => document.getElementById('modalName')?.focus(), 100);
     document.getElementById('btnModalCancel').addEventListener('click', closeModal);
-    document.getElementById('btnModalSubmit').addEventListener('click', submitCreate);
-    document.getElementById('modalName').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitCreate(); });
+    document.getElementById('btnModalSubmit').addEventListener('click', isEdit ? submitEditArea : submitCreate);
+    document.getElementById('modalName').addEventListener('keydown', (e) => { if (e.key === 'Enter') (isEdit ? submitEditArea : submitCreate)(); });
 }
 function closeModal() { document.getElementById('modalOverlay').classList.remove('active'); }
 
@@ -996,6 +1015,26 @@ async function submitCreate() {
         if (parentId) _expanded[parseInt(parentId, 10)] = true;
         await loadData();
     } catch (err) { alert('创建失败：' + err.message); }
+}
+
+async function submitEditArea() {
+    const name = document.getElementById('modalName').value.trim();
+    const description = document.getElementById('modalDesc').value.trim();
+    const editId = document.getElementById('modalEditId').value;
+    if (!name) { alert('请输入领域名称'); return; }
+    if (!editId) return;
+    try {
+        await api(`/areas/${editId}`, { method: 'PATCH', body: { name, description } });
+        closeModal();
+        // 如果修改的是当前选中的领域，立即更新标题和简介
+        if (selectedAreaId === parseInt(editId, 10)) {
+            document.getElementById('areaTitle').textContent = name;
+            document.getElementById('areaDesc').textContent = description || '暂无简介';
+            selectedAreaName = name;
+        }
+        // 刷新领域树（树中的名字会同步更新）
+        await loadData();
+    } catch (err) { alert('保存失败：' + err.message); }
 }
 
 // ============================================================

@@ -139,6 +139,12 @@ function bootApp() {
     document.getElementById('mBtnSaveNote').addEventListener('click', saveNote);
     document.getElementById('mBtnNewRoot').addEventListener('click', () => showCreateModal(null, ''));
     document.getElementById('mBtnRagSearch').addEventListener('click', showRagSearchModal);
+    document.getElementById('mBtnEditArea').addEventListener('click', () => {
+        if (selectedAreaId && selectedAreaName !== undefined) {
+            const desc = document.getElementById('mAreaDesc').textContent;
+            showEditAreaModal(selectedAreaId, selectedAreaName, desc === '暂无简介' ? '' : desc);
+        }
+    });
     document.getElementById('mSendBtn').addEventListener('click', sendMessage);
     document.getElementById('mChatInput').addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
@@ -331,6 +337,7 @@ function selectArea(nodeData) {
 
     document.getElementById('mAreaTitle').textContent = nodeData.name;
     document.getElementById('mAreaDesc').textContent = nodeData.description || '暂无简介';
+    document.getElementById('mBtnEditArea').style.display = 'flex';
     document.getElementById('mChatMessages').innerHTML =
         `<div class="m-empty-state"><div class="m-empty-icon">💬</div><p>已进入 <strong>${nodeData.name}</strong>，开始学习吧！</p></div>`;
     document.getElementById('mChatInput').disabled = false;
@@ -348,6 +355,7 @@ function selectArea(nodeData) {
 function clearArea() {
     document.getElementById('mAreaTitle').textContent = '请选择一个领域';
     document.getElementById('mAreaDesc').textContent = '';
+    document.getElementById('mBtnEditArea').style.display = 'none';
     document.getElementById('mChatMessages').innerHTML =
         `<div class="m-empty-state"><div class="m-empty-icon">🌱</div><p>选择一个学习领域，开启 AI 引导的深度学习之旅</p></div>`;
     document.getElementById('mChatInput').disabled = true;
@@ -685,11 +693,23 @@ function buildUsageHtml(usage) {
 // ============================================================
 
 function showCreateModal(parentId, parentName) {
-    document.getElementById('mModalCreateTitle').textContent = parentId
-        ? `在「${parentName}」下创建子领域` : '创建顶级学习领域';
-    document.getElementById('mCreateParentId').value = parentId || '';
-    document.getElementById('mCreateName').value = '';
-    document.getElementById('mCreateDesc').value = '';
+    showAreaModal({ mode: 'create', parentId, parentName });
+}
+
+function showEditAreaModal(editId, editName, editDesc) {
+    showAreaModal({ mode: 'edit', editId, editName, editDesc });
+}
+
+function showAreaModal(opts) {
+    const isEdit = opts.mode === 'edit';
+    document.getElementById('mModalCreateTitle').textContent = isEdit
+        ? '编辑学习领域'
+        : (opts.parentId ? `在「${opts.parentName}」下创建子领域` : '创建顶级学习领域');
+    document.getElementById('mCreateParentId').value = opts.parentId || '';
+    document.getElementById('mEditId').value = opts.editId || '';
+    document.getElementById('mCreateName').value = isEdit ? (opts.editName || '') : '';
+    document.getElementById('mCreateDesc').value = isEdit ? (opts.editDesc || '') : '';
+    document.getElementById('mCreateSubmit').textContent = isEdit ? '保存' : '创建';
     document.getElementById('mModalCreate').classList.add('active');
     setTimeout(() => document.getElementById('mCreateName')?.focus(), 100);
 }
@@ -706,15 +726,29 @@ async function submitCreate() {
     const name = document.getElementById('mCreateName').value.trim();
     const description = document.getElementById('mCreateDesc').value.trim();
     const parentId = document.getElementById('mCreateParentId').value;
+    const editId = document.getElementById('mEditId').value;
     if (!name) { alert('请输入领域名称'); return; }
-    const body = { name, description };
-    if (parentId) body.parent_id = parseInt(parentId, 10);
     try {
-        await api('/areas', { method: 'POST', body });
-        closeCreateModal();
-        if (parentId) _expanded[parseInt(parentId, 10)] = true;
-        await loadData();
-    } catch (err) { alert('创建失败：' + err.message); }
+        if (editId) {
+            // 编辑模式
+            await api(`/areas/${editId}`, { method: 'PATCH', body: { name, description } });
+            closeCreateModal();
+            if (selectedAreaId === parseInt(editId, 10)) {
+                document.getElementById('mAreaTitle').textContent = name;
+                document.getElementById('mAreaDesc').textContent = description || '暂无简介';
+                selectedAreaName = name;
+            }
+            await loadData();
+        } else {
+            // 创建模式
+            const body = { name, description };
+            if (parentId) body.parent_id = parseInt(parentId, 10);
+            await api('/areas', { method: 'POST', body });
+            closeCreateModal();
+            if (parentId) _expanded[parseInt(parentId, 10)] = true;
+            await loadData();
+        }
+    } catch (err) { alert(editId ? '保存失败：' + err.message : '创建失败：' + err.message); }
 }
 
 // ============================================================
