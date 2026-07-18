@@ -104,9 +104,23 @@ app.include_router(skills.router)
 
 @app.get("/")
 async def root():
-    """重定向到主页面"""
+    """重定向到新主页"""
     from fastapi.responses import RedirectResponse
-    return RedirectResponse(url="/static/index.html")
+    return RedirectResponse(url="/static/home.html")
+
+
+@app.get("/domain")
+async def domain_page():
+    """领域页面（原三栏布局）"""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/static/domain.html")
+
+
+@app.get("/notes")
+async def notes_page():
+    """笔记页面（两栏：领域树 + 笔记编辑器）"""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/static/notes.html")
 
 
 @app.get("/plan")

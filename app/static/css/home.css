@@ -1,0 +1,159 @@
+/* ========== Home Page – 毛玻璃渐变风格 ========== */
+* { margin:0; padding:0; box-sizing:border-box; }
+
+html, body {
+    height: 100%;
+    font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    overflow: hidden;
+}
+
+.home-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+    padding: 40px 20px;
+    position: relative;
+}
+
+/* 顶部品牌区 */
+.home-header {
+    text-align: center;
+    margin-bottom: 48px;
+    animation: fadeInDown 0.8s ease-out;
+}
+
+.home-logo {
+    font-size: 56px;
+    margin-bottom: 12px;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+}
+
+.home-title {
+    font-size: 48px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+}
+
+.home-subtitle {
+    font-size: 18px;
+    color: rgba(255,255,255,0.6);
+    margin-top: 8px;
+    font-weight: 400;
+    letter-spacing: 1px;
+}
+
+/* 导航卡片容器 */
+.home-cards {
+    display: flex;
+    gap: 28px;
+    animation: fadeInUp 0.8s ease-out 0.2s both;
+}
+
+/* 导航卡片 – 毛玻璃效果 */
+.home-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 240px;
+    padding: 40px 28px 32px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    text-decoration: none;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+
+.home-card:hover {
+    transform: translateY(-8px);
+    background: rgba(255,255,255,0.14);
+    border-color: rgba(255,255,255,0.3);
+    box-shadow: 0 20px 48px rgba(0,0,0,0.35);
+}
+
+.home-card:active {
+    transform: translateY(-2px);
+}
+
+.card-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.2));
+    transition: transform 0.3s ease;
+}
+
+.home-card:hover .card-icon {
+    transform: scale(1.1);
+}
+
+.card-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    width: 100%;
+    text-align: center;
+}
+
+.card-desc {
+    font-size: 14px;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.5;
+    min-height: 42px;
+}
+
+/* 底部状态栏 */
+.home-footer {
+    position: absolute;
+    bottom: 32px;
+    text-align: center;
+}
+
+.home-footer span {
+    font-size: 14px;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 0.5px;
+}
+
+/* 动画 */
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-24px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 响应式 */
+@media (max-width: 820px) {
+    .home-cards {
+        flex-direction: column;
+        gap: 20px;
+    }
+    .home-card {
+        width: 320px;
+        padding: 28px 24px 24px;
+    }
+    .home-title { font-size: 36px; }
+    .home-subtitle { font-size: 16px; }
+    .card-icon { font-size: 40px; }
+    .card-title { font-size: 20px; }
+}
+
+@media (max-width: 480px) {
+    .home-card { width: 300px; }
+    .home-title { font-size: 30px; }
+}

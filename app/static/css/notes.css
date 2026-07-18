@@ -1,0 +1,484 @@
+/* ========== Notes Page – 两栏布局 ========== */
+* { margin:0; padding:0; box-sizing:border-box; }
+
+html, body {
+    height: 100%;
+    font-family: 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: #f5f7fa;
+    color: #333;
+    overflow: hidden;
+}
+
+/* ========== Auth (复用 skills.css 的模式) ========== */
+.auth-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    width: 100vw;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+.auth-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 40px 36px;
+    width: 380px;
+    max-width: 90vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,.15);
+    text-align: center;
+}
+.auth-logo { font-size: 48px; margin-bottom: 8px; }
+.auth-card h1 { font-size: 24px; font-weight: 700; color: #1a1a2e; }
+.auth-sub { font-size: 13px; color: #909399; margin: 4px 0 24px; }
+.auth-tabs { display:flex; gap:0; margin-bottom:20px; border-radius:8px; overflow:hidden; border:1px solid #e4e7ed; }
+.auth-tab { flex:1; padding:10px 0; border:none; background:#fff; cursor:pointer; font-size:14px; color:#606266; transition:all .2s; }
+.auth-tab.active { background:#409eff; color:#fff; }
+.auth-card form { text-align:left; }
+.auth-card label { display:block; font-size:13px; color:#606266; margin-bottom:4px; }
+.auth-card input { width:100%; padding:10px 14px; border:1px solid #dcdfe6; border-radius:8px; font-size:14px; outline:none; margin-bottom:14px; transition:border-color .2s; }
+.auth-card input:focus { border-color:#409eff; }
+.auth-error { font-size:13px; color:#ef4444; margin-bottom:10px; min-height:20px; }
+.auth-btn { width:100%; padding:12px 0; border:none; border-radius:8px; background:#409eff; color:#fff; font-size:15px; cursor:pointer; transition:background .2s; }
+.auth-btn:hover { background:#337ecc; }
+.auth-btn:disabled { background:#a8c8e8; cursor:not-allowed; }
+
+/* ========== Page Layout ========== */
+.app-page {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* ========== Header (同 skills.html 风格) ========== */
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    height: 52px;
+    background: #1a1a2e;
+    flex-shrink: 0;
+}
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.header-logo {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.5px;
+}
+.header-divider {
+    width: 1px;
+    height: 20px;
+    background: rgba(255,255,255,0.2);
+}
+.header-title {
+    font-size: 14px;
+    color: rgba(255,255,255,0.8);
+    font-weight: 500;
+}
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.user-badge {
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    background: rgba(255,255,255,0.1);
+    padding: 4px 10px;
+    border-radius: 12px;
+    white-space: nowrap;
+}
+.header-link {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    text-decoration: none;
+    transition: color .2s;
+}
+.header-link:hover { color: #fff; }
+.logout-btn {
+    width: 30px; height: 30px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.08);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.6);
+    transition: all .2s;
+}
+.logout-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
+/* ========== Body (两栏) ========== */
+.page-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+/* ========== Left: Area Tree ========== */
+.notes-tree-panel {
+    width: 260px;
+    min-width: 260px;
+    background: #fff;
+    border-right: 1px solid #e4e7ed;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.notes-tree-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 14px 10px;
+    border-bottom: 1px solid #eef0f4;
+}
+.notes-tree-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a1a2e;
+}
+.btn-create-area {
+    width: 28px;
+    height: 28px;
+    border: 1px dashed #dcdfe6;
+    border-radius: 6px;
+    background: #fafbfc;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #606266;
+    transition: all .2s;
+}
+.btn-create-area:hover {
+    background: #f0f5ff;
+    border-color: #409eff;
+    color: #409eff;
+}
+.notes-tree {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px 8px 10px;
+}
+
+/* 树节点样式 (同 style.css) */
+.tree-node { user-select:none; }
+.tree-row {
+    display: flex;
+    align-items: center;
+    padding: 5px 6px;
+    border-radius: 5px;
+    cursor: pointer;
+    gap: 3px;
+    transition: background .12s;
+    min-height: 28px;
+}
+.tree-row:hover { background:#f5f7fa; }
+.tree-row.active { background:#ecf5ff; }
+.tree-toggle {
+    width:16px; height:16px;
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:10px;
+    color:#c0c4cc;
+    border-radius:3px;
+    transition:transform .2s;
+}
+.tree-toggle.expanded { transform:rotate(90deg); }
+.tree-toggle.leaf { visibility:hidden; }
+.tree-icon { font-size:13px; flex-shrink:0; }
+.tree-name {
+    flex:1;
+    font-size:12px;
+    font-weight:500;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+.tree-delete {
+    width:20px; height:20px;
+    border:none;
+    background:transparent;
+    border-radius:3px;
+    cursor:pointer;
+    font-size:11px;
+    color:#c0c4cc;
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    opacity:0;
+    transition:all .12s;
+}
+.tree-row:hover .tree-delete { opacity:1; }
+.tree-delete:hover { background:#fee2e2; color:#ef4444; }
+.tree-children { padding-left:20px; }
+
+.loading-text { text-align:center; color:#c0c4cc; padding:30px 0; font-size:13px; }
+
+/* ========== Right: Notes Editor ========== */
+.notes-content-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    overflow: hidden;
+}
+.notes-content-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid #eef0f4;
+}
+.notes-area-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #303133;
+}
+.notes-area-sub {
+    font-size: 12px;
+    color: #909399;
+    margin-top: 2px;
+}
+.notes-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.note-status {
+    font-size: 11px;
+    color: #c0c4cc;
+    white-space: nowrap;
+}
+.note-btn {
+    padding: 6px 14px;
+    border: 1px solid #dcdfe6;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    color: #606266;
+    transition: all .2s;
+    white-space: nowrap;
+}
+.note-btn:hover { border-color: #409eff; color: #409eff; }
+.note-btn-primary { background: #409eff; color: #fff; border-color: #409eff; }
+.note-btn-primary:hover { background: #337ecc; color: #fff; }
+
+.notes-editor-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+/* 笔记查看模式 (同 style.css) */
+.note-view {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 32px;
+    font-size: 15px;
+    line-height: 1.8;
+    color: #303133;
+}
+.note-view h1, .note-view h2, .note-view h3, .note-view h4 {
+    margin: 24px 0 10px;
+    font-weight: 700;
+    color: #1a1a2e;
+    line-height: 1.4;
+}
+.note-view h1 { font-size: 24px; border-bottom: 2px solid #eef0f4; padding-bottom: 10px; }
+.note-view h2 { font-size: 20px; border-bottom: 1px solid #eef0f4; padding-bottom: 8px; }
+.note-view h3 { font-size: 17px; }
+.note-view h4 { font-size: 15px; }
+.note-view p { margin: 8px 0; }
+.note-view ul, .note-view ol { padding-left: 24px; margin: 8px 0; }
+.note-view li { margin: 4px 0; }
+.note-view ul > li { list-style-type: disc; }
+.note-view ul > li > ul > li { list-style-type: circle; }
+.note-view code {
+    background: #f0f2f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    color: #d63384;
+    border: 1px solid #e8e8e8;
+}
+.note-view pre {
+    border: none;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    overflow-x: auto;
+    background: #1e1e2e;
+    position: relative;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+}
+.note-view pre code {
+    background: none;
+    padding: 0;
+    font-size: 13px;
+    line-height: 1.6;
+    border: none;
+    color: #abb2bf;
+}
+.note-view pre::before {
+    content: attr(data-language);
+    position: absolute;
+    top: 8px;
+    right: 14px;
+    font-size: 10px;
+    color: #6c7086;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-weight: 600;
+}
+.note-view blockquote {
+    border-left: 4px solid #409eff;
+    padding: 10px 18px;
+    margin: 12px 0;
+    color: #555;
+    background: linear-gradient(to right, #f0f6ff, transparent);
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+}
+.note-view table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    margin: 12px 0;
+    border: 1px solid #e4e7ed;
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 14px;
+}
+.note-view th, .note-view td {
+    padding: 9px 14px;
+    text-align: left;
+}
+.note-view th {
+    background: #f5f7fa;
+    font-weight: 600;
+    color: #303133;
+    border-bottom: 2px solid #e4e7ed;
+}
+.note-view td { border-bottom: 1px solid #eef0f4; }
+.note-view tbody tr:last-child td { border-bottom: none; }
+.note-view tbody tr:hover { background: #f8faff; }
+.note-view hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #dcdfe6, transparent);
+    margin: 24px 0;
+}
+.note-view a { color: #409eff; text-decoration: none; border-bottom: 1px solid transparent; transition: border-color .2s; }
+.note-view a:hover { border-bottom-color: #409eff; }
+.note-view img { max-width: 100%; border-radius: 8px; margin: 12px 0; box-shadow: 0 2px 8px rgba(0,0,0,.06); display: block; }
+.note-view .empty-note { color: #c0c4cc; font-size: 13px; margin-top: 40px; text-align: center; }
+
+/* Quill 编辑器 */
+.note-editor {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.note-editor .ql-container {
+    flex: 1;
+    overflow-y: auto;
+    font-size: 15px;
+}
+.note-editor .ql-editor {
+    min-height: 300px;
+    padding: 20px 32px;
+    font-size: 15px;
+    line-height: 1.8;
+}
+.note-editor .ql-toolbar {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: 1px solid #e4e7ed;
+    padding: 8px 12px;
+}
+/* Quill 只读模式 */
+.note-editor.ql-readonly .ql-toolbar { display: none; }
+.note-editor.ql-readonly .ql-container { border: none; }
+.note-editor.ql-readonly .ql-editor { padding: 0; }
+.note-editor.ql-readonly { background: transparent; }
+.note-editor .ql-editor pre {
+    background: #282c34;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 8px 0;
+    overflow-x: auto;
+}
+.note-editor .ql-editor pre.ql-syntax {
+    background: #282c34;
+    color: #abb2bf;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.5;
+}
+.note-editor .ql-editor code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+/* ========== Modals (同 style.css) ========== */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.35);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px 28px;
+    width: 400px;
+    max-width: 90vw;
+    box-shadow: 0 12px 40px rgba(0,0,0,.15);
+}
+.modal-box h2 { font-size: 17px; margin-bottom: 14px; }
+.modal-box label { display: block; font-size: 13px; margin-bottom: 3px; color: #606266; }
+.modal-box input, .modal-box textarea, .modal-box select {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid #dcdfe6;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-bottom: 12px;
+    outline: none;
+    font-family: inherit;
+}
+.modal-box input:focus, .modal-box textarea:focus { border-color: #409eff; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 2px; }
+.modal-actions button {
+    padding: 7px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    border: 1px solid #dcdfe6;
+    background: #fff;
+    transition: all .2s;
+}
+.modal-actions .btn-primary { background: #409eff; color: #fff; border-color: #409eff; }
+.modal-actions .btn-primary:hover { background: #337ecc; }

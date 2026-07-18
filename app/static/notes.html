@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学习笔记 – LearnWithAI</title>
+    <!-- Quill.js 富文本编辑器 -->
+    <link href="/static/css/lib/quill.snow.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/notes.css">
+</head>
+<body>
+
+<!-- ====== 登录页 ====== -->
+<div class="auth-page" id="authPage">
+    <div class="auth-card">
+        <div class="auth-logo">🌳</div>
+        <h1>LearnWithAI</h1>
+        <p class="auth-sub">学习笔记</p>
+        <div class="auth-tabs">
+            <button class="auth-tab active" id="tabLogin">登录</button>
+            <button class="auth-tab" id="tabRegister">注册</button>
+        </div>
+        <form id="authForm" onsubmit="return false;">
+            <label>用户名</label>
+            <input type="text" id="authUsername" placeholder="输入用户名" required autocomplete="username">
+            <label>密码</label>
+            <input type="password" id="authPassword" placeholder="输入密码" required autocomplete="current-password">
+            <p class="auth-error" id="authError"></p>
+            <button type="submit" class="auth-btn" id="authBtn">登录</button>
+        </form>
+    </div>
+</div>
+
+<!-- ====== 主页面（两栏） ====== -->
+<div class="app-page" id="appPage" style="display:none;">
+    <!-- 顶部导航 -->
+    <header class="page-header">
+        <div class="header-left">
+            <span class="header-logo">🌳 LearnWithAI</span>
+            <span class="header-divider"></span>
+            <span class="header-title">📝 学习笔记</span>
+        </div>
+        <div class="header-right">
+            <span class="user-badge" id="userBadge"></span>
+            <a href="/" class="header-link">← 返回主页</a>
+            <button class="logout-btn" id="logoutBtn" title="退出登录">🚪</button>
+        </div>
+    </header>
+
+    <!-- 主体 -->
+    <div class="page-body">
+        <!-- 左栏：领域树 -->
+        <aside class="notes-tree-panel">
+            <div class="notes-tree-header">
+                <div class="notes-tree-title">📚 学习领域</div>
+                <button class="btn-create-area" id="btnNewRootArea" title="新建领域">➕</button>
+            </div>
+            <div class="notes-tree" id="areaTree">
+                <div class="loading-text">加载中...</div>
+            </div>
+        </aside>
+
+        <!-- 右栏：笔记编辑器 -->
+        <main class="notes-content-panel">
+            <div class="notes-content-header">
+                <div>
+                    <div class="notes-area-title" id="noteTitle">📝 学习笔记</div>
+                    <div class="notes-area-sub" id="noteAreaName"></div>
+                </div>
+                <div class="notes-header-actions">
+                    <span class="note-status" id="noteStatus"></span>
+                    <button class="note-btn" id="btnEditNote" style="display:none;">✏️ 编辑</button>
+                    <button class="note-btn note-btn-primary" id="btnSaveNote" style="display:none;">💾 保存</button>
+                </div>
+            </div>
+            <div class="notes-editor-area">
+                <div class="note-view" id="noteView"></div>
+                <div class="note-editor" id="noteEditor" style="display:none;"></div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- ====== 编辑领域模态框 ====== -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+        <h2 id="modalTitle">创建学习领域</h2>
+        <div id="modalForm"></div>
+    </div>
+</div>
+
+<!-- 本地库 -->
+<script src="/static/js/lib/quill.js"></script>
+<script src="/static/js/lib/marked.min.js"></script>
+<script src="/static/js/notes.js"></script>
+</body>
+</html>

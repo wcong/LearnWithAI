@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LearnWithAI – AI 辅助深度学习</title>
+    <!-- Quill.js 富文本编辑器 -->
+    <link href="/static/css/lib/quill.snow.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<!-- ====== 登录页 ====== -->
+<div class="auth-page" id="authPage">
+    <div class="auth-card">
+        <div class="auth-logo">🌳</div>
+        <h1>LearnWithAI</h1>
+        <p class="auth-sub">AI 辅助深度学习平台</p>
+        <div class="auth-tabs">
+            <button class="auth-tab active" id="tabLogin">登录</button>
+            <button class="auth-tab" id="tabRegister">注册</button>
+        </div>
+        <form id="authForm" onsubmit="return false;">
+            <label>用户名</label>
+            <input type="text" id="authUsername" placeholder="输入用户名" required autocomplete="username">
+            <label>密码</label>
+            <input type="password" id="authPassword" placeholder="输入密码" required autocomplete="current-password">
+            <p class="auth-error" id="authError"></p>
+            <button type="submit" class="auth-btn" id="authBtn">登录</button>
+        </form>
+    </div>
+</div>
+
+<!-- ====== 主应用（三栏） ====== -->
+<div class="app-page" id="appContainer" style="display:none;">
+    <!-- 顶部导航 -->
+    <header class="page-header">
+        <div class="header-left">
+            <span class="header-logo">🌳 LearnWithAI</span>
+            <span class="header-divider"></span>
+            <span class="header-title">📚 学习领域</span>
+        </div>
+        <div class="header-right">
+            <span class="user-badge" id="usernameBadge"></span>
+            <a href="/" class="header-link">← 返回主页</a>
+            <a href="/static/skills.html" class="header-link">⚙️ 技能</a>
+            <button class="icon-btn" id="btnAdmin" title="管理员面板">📊</button>
+            <button class="logout-btn" id="logoutBtn" title="退出登录">🚪</button>
+        </div>
+    </header>
+
+    <!-- 三栏主体 -->
+    <div style="flex:1;display:flex;overflow:hidden;">
+        <!-- 左栏：领域树 -->
+        <aside class="area-tree-panel">
+            <div class="list-toolbar">
+                <button id="btnNewRootArea">➕ 新建领域</button>
+                <button id="btnRagSearch">🔍 搜索笔记</button>
+            </div>
+            <div class="area-tree" id="areaTree"></div>
+        </aside>
+
+    <!-- 中栏：聊天 -->
+    <main class="chat-panel">
+        <div class="chat-area-info">
+            <div class="area-info-left">
+                <div class="area-title" id="areaTitle">请选择一个领域</div>
+                <div class="area-desc" id="areaDesc">点击左侧领域列表开始学习</div>
+            </div>
+            <button class="area-edit-btn" id="btnEditArea" style="display:none;" title="编辑领域">✏️</button>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="empty-chat">
+                <div class="icon">🌱</div>
+                <p>选择一个学习领域，开启 AI 引导的深度学习之旅</p>
+            </div>
+        </div>
+        <!-- AI Thinking 实时展示面板 -->
+        <div class="thinking-panel" id="thinkingPanel" style="display:none;">
+            <div class="thinking-header" id="thinkingHeader">
+                <span class="thinking-icon" id="thinkingIcon">🤔</span>
+                <span class="thinking-title" id="thinkingTitle">AI 思考中...</span>
+                <button class="thinking-toggle" id="thinkingToggle" style="display:none;" title="收起">▼</button>
+            </div>
+            <div class="thinking-body" id="thinkingBody">
+                <div class="thinking-content" id="thinkingContent"></div>
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <div class="skill-toolbar">
+                <select id="skillSelect" class="skill-select">
+                    <option value="">无 Skill</option>
+                </select>
+                <a href="/static/skills.html" class="skill-manage-link" title="管理技能">⚙️</a>
+            </div>
+            <div class="chat-input-row">
+                <textarea id="chatInput" rows="1" placeholder="选择左侧领域后开始提问..." disabled></textarea>
+                <button id="sendBtn" disabled>发送</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- 右栏：学习笔记 -->
+    <main class="note-panel">
+        <div class="note-header">
+            <div>
+                <span class="note-title" id="noteTitle">📝 学习笔记</span>
+                <span class="note-status" id="noteStatus"></span>
+            </div>
+            <div style="display:flex;gap:6px;">
+                <button class="note-btn" id="btnEditNote" style="display:none;">✏️ 编辑</button>
+                <button class="note-btn note-btn-primary" id="btnSaveNote" style="display:none;">💾 保存</button>
+            </div>
+        </div>
+        <div class="note-view" id="noteView"></div>
+        <div class="note-editor" id="noteEditor" style="display:none;"></div>
+    </main>
+    </div><!-- /inner flex -->
+</div><!-- /app-page -->
+
+<!-- ====== 模态框 ====== -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+        <h2 id="modalTitle">创建学习领域</h2>
+        <div id="modalForm"></div>
+    </div>
+</div>
+
+<div class="response-overlay" id="responseOverlay">
+    <div class="response-modal">
+        <div class="response-header">
+            <span class="response-label" id="responseLabel">AI 回复详情</span>
+            <button class="response-close" id="btnCloseResponse">✕</button>
+        </div>
+        <div class="response-body" id="responseBody"></div>
+    </div>
+</div>
+
+<!-- ====== RAG 搜索弹窗 ====== -->
+<div class="rag-search-overlay" id="ragSearchOverlay">
+    <div class="rag-search-modal">
+        <div class="rag-search-header">
+            <span class="rag-search-label">🔍 RAG 笔记搜索</span>
+            <button class="rag-search-close" id="btnCloseRagSearch">✕</button>
+        </div>
+        <div class="rag-search-body">
+            <div class="rag-search-input-row">
+                <input type="text" id="ragSearchInput" placeholder="输入关键词搜索你的笔记..." autofocus>
+                <button id="btnSubmitRagSearch">搜索</button>
+            </div>
+            <div class="rag-search-results" id="ragSearchResults">
+                <div class="rag-search-empty">输入查询内容后点击"搜索"</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====== Admin 统计面板 ====== -->
+<div class="admin-overlay" id="adminOverlay">
+    <div class="admin-modal">
+        <div class="admin-header">
+            <span class="admin-label">📊 管理面板</span>
+            <div class="admin-header-actions">
+                <button class="admin-refresh-btn" id="btnAdminRefresh">🔄 刷新</button>
+                <button class="admin-close" id="btnCloseAdmin">✕</button>
+            </div>
+        </div>
+        <div class="admin-tabs">
+            <button class="admin-tab active" data-tab="stats">📈 统计</button>
+        </div>
+        <div class="admin-body" id="adminBody">
+            <div class="admin-loading">加载中...</div>
+        </div>
+    </div>
+</div>
+
+<!-- ====== 子领域审查结果模态框 ====== -->
+<div class="examine-overlay" id="examineOverlay">
+    <div class="examine-modal">
+        <div class="examine-header">
+            <span class="examine-label" id="examineLabel">🔍 审查子领域</span>
+            <button class="examine-close" id="btnCloseExamine">✕</button>
+        </div>
+        <div class="examine-body" id="examineBody">
+            <div class="examine-loading">⏳ AI 正在分析子领域...</div>
+        </div>
+    </div>
+</div>
+
+<!-- ====== 生成子领域模态框 ====== -->
+<div class="gen-overlay" id="genOverlay">
+    <div class="gen-modal">
+        <div class="gen-header">
+            <span class="gen-label">✨ 生成子领域</span>
+            <button class="gen-close" id="btnCloseGen">✕</button>
+        </div>
+        <div class="gen-body" id="genBody">
+            <div class="gen-loading">⏳ AI 正在根据聊天内容生成子领域建议...</div>
+        </div>
+    </div>
+</div>
+
+<!-- highlight.js 代码语法高亮 -->
+<link rel="stylesheet" href="/static/css/lib/atom-one-dark.min.css">
+<script src="/static/js/lib/highlight.min.js"></script>
+
+<!-- 本地库 -->
+<script src="/static/js/lib/quill.js"></script>
+<script src="/static/js/lib/marked.min.js"></script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>

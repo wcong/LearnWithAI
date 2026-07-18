@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LearnWithAI – AI 辅助深度学习平台</title>
+    <link rel="stylesheet" href="/static/css/home.css">
+</head>
+<body>
+    <div class="home-page">
+        <!-- 顶部品牌区 -->
+        <header class="home-header">
+            <div class="home-logo">🌳</div>
+            <h1 class="home-title">LearnWithAI</h1>
+            <p class="home-subtitle">AI 辅助深度学习平台</p>
+        </header>
+
+        <!-- 导航卡片 -->
+        <div class="home-cards" id="homeCards">
+            <a href="/domain" class="home-card" id="cardDomain">
+                <div class="card-icon">📚</div>
+                <div class="card-title">学习领域</div>
+                <div class="card-desc">管理知识领域，与 AI 对话学习</div>
+            </a>
+            <a href="/notes" class="home-card" id="cardNotes">
+                <div class="card-icon">📝</div>
+                <div class="card-title">学习笔记</div>
+                <div class="card-desc">专注笔记编辑，随心记录知识</div>
+            </a>
+            <a href="/static/skills.html" class="home-card" id="cardSkills">
+                <div class="card-icon">⚙️</div>
+                <div class="card-title">技能管理</div>
+                <div class="card-desc">管理 AI 技能模板，定制学习助手</div>
+            </a>
+        </div>
+
+        <!-- 底部状态 -->
+        <footer class="home-footer">
+            <span id="homeUserStatus">加载中...</span>
+        </footer>
+    </div>
+
+    <script>
+        // 检测登录状态，显示用户信息
+        const token = localStorage.getItem('token') || '';
+        const saved = localStorage.getItem('user');
+        const statusEl = document.getElementById('homeUserStatus');
+        if (token && saved) {
+            try {
+                const user = JSON.parse(saved);
+                statusEl.textContent = '👋 欢迎回来，' + user.username;
+            } catch {
+                statusEl.textContent = '🌱 登录以开始学习之旅';
+            }
+        } else {
+            statusEl.textContent = '🌱 登录以开始学习之旅';
+        }
+    </script>
+</body>
+</html>
