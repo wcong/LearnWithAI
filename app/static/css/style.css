@@ -1550,9 +1550,9 @@ mark.rag-highlight { background:#fff3cd; color:#856404; padding:0 2px; border-ra
 /* ---- 主容器 ---- */
 .plan-container {
     flex:1;
-    padding-top:56px;
     display:flex;
     flex-direction:column;
+    overflow:hidden;
 }
 
 /* ---- 输入区 ---- */

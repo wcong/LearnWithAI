@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>技能管理 – LearnWithAI</title>
     <link rel="stylesheet" href="/static/css/skills.css">
+    <link rel="stylesheet" href="/static/css/nav.css">
 </head>
 <body>
 
@@ -35,13 +36,19 @@
     <header class="page-header">
         <div class="header-left">
             <span class="header-logo">🌳 LearnWithAI</span>
-            <span class="header-divider"></span>
-            <span class="header-title">⚙️ 技能管理</span>
         </div>
+        <nav class="header-nav">
+            <a href="/domain" class="nav-link" data-page="domain">📚 <span class="nav-icon-text">学习领域</span></a>
+            <a href="/notes" class="nav-link" data-page="notes">📝 <span class="nav-icon-text">学习笔记</span></a>
+            <a href="/static/skills.html" class="nav-link active" data-page="skills">⚙️ <span class="nav-icon-text">技能管理</span></a>
+            <a href="/plan" class="nav-link" data-page="plan">🧠 <span class="nav-icon-text">学习计划</span><span class="nav-badge">实验</span></a>
+        </nav>
         <div class="header-right">
             <span class="user-badge" id="userBadge"></span>
-            <a href="/" class="header-link">← 返回主页</a>
-            <button class="logout-btn" id="logoutBtn" title="退出登录">🚪</button>
+            <button class="logout-btn" id="logoutBtn" title="退出登录">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span>退出</span>
+            </button>
         </div>
     </header>
 

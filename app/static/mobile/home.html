@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <title>LearnWithAI – 移动主页</title>
+    <link rel="stylesheet" href="/static/mobile/css/style.css">
+    <link rel="stylesheet" href="/static/mobile/css/home.css">
+</head>
+<body>
+<div class="m-home-page">
+    <!-- 顶部品牌区 -->
+    <header class="m-home-brand">
+        <div class="m-home-logo">🌳</div>
+        <h1 class="m-home-title">LearnWithAI</h1>
+        <p class="m-home-subtitle">AI 辅助深度学习平台</p>
+    </header>
+
+    <!-- 用户欢迎语（已登录显示） -->
+    <div class="m-home-greeting" id="mHomeGreeting"></div>
+
+    <!-- 导航卡片 -->
+    <div class="m-home-cards">
+        <a href="/static/mobile/index.html" class="m-home-card" data-page="domain">
+            <div class="m-card-icon">📚</div>
+            <div class="m-card-body">
+                <div class="m-card-title">学习领域</div>
+                <div class="m-card-desc">管理知识领域，与 AI 对话学习</div>
+            </div>
+            <div class="m-card-arrow">›</div>
+        </a>
+        <a href="/static/mobile/notes.html" class="m-home-card" data-page="notes">
+            <div class="m-card-icon">📝</div>
+            <div class="m-card-body">
+                <div class="m-card-title">学习笔记</div>
+                <div class="m-card-desc">专注笔记编辑，随心记录知识</div>
+            </div>
+            <div class="m-card-arrow">›</div>
+        </a>
+        <a href="/static/skills.html" class="m-home-card" data-page="skills">
+            <div class="m-card-icon">⚙️</div>
+            <div class="m-card-body">
+                <div class="m-card-title">技能管理</div>
+                <div class="m-card-desc">管理 AI 技能模板，定制学习助手</div>
+            </div>
+            <div class="m-card-arrow">›</div>
+        </a>
+        <a href="/static/mobile/plan.html" class="m-home-card m-home-card-experimental" data-page="plan">
+            <span class="m-card-badge">实验</span>
+            <div class="m-card-icon">🧠</div>
+            <div class="m-card-body">
+                <div class="m-card-title">学习计划</div>
+                <div class="m-card-desc">AI 自动探索并规划学习路径</div>
+            </div>
+            <div class="m-card-arrow">›</div>
+        </a>
+    </div>
+
+    <!-- 底部操作区 -->
+    <footer class="m-home-footer">
+        <a href="/static/home.html" class="m-home-desktop-link">🖥️ 切换桌面版</a>
+    </footer>
+</div>
+
+<script>
+    // 显示用户欢迎语
+    (function () {
+        const greetingEl = document.getElementById('mHomeGreeting');
+        const token = localStorage.getItem('token');
+        const saved = localStorage.getItem('user');
+        if (token && saved) {
+            try {
+                const user = JSON.parse(saved);
+                greetingEl.innerHTML = `<span class="m-greeting-emoji">👋</span><span>欢迎回来，<b>${user.username}</b></span>`;
+                greetingEl.classList.add('logged-in');
+            } catch {
+                greetingEl.innerHTML = '<span class="m-greeting-emoji">🌱</span><span>登录以开始学习之旅</span>';
+            }
+        } else {
+            greetingEl.innerHTML = '<span class="m-greeting-emoji">🌱</span><span>登录以开始学习之旅</span>';
+        }
+    })();
+</script>
+</body>
+</html>

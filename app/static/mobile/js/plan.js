@@ -421,6 +421,10 @@ document.getElementById('mPlanRestartBtn').addEventListener('click', () => {
     switchToInput();
 });
 
+// 退出登录
+const mPlanLogoutBtn = document.getElementById('mPLogoutBtn');
+if (mPlanLogoutBtn) mPlanLogoutBtn.addEventListener('click', () => { logout(); showAuth(); });
+
 document.querySelectorAll('.m-plan-hint-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         document.getElementById('mPlanDomainInput').value = btn.dataset.domain;

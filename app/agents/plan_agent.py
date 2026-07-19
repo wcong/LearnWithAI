@@ -19,8 +19,8 @@ from app.agents.streaming_handler import StreamingCallbackHandler
 
 log = logging.getLogger("learnwithai")
 
-MAX_DEPTH = 10
-MAX_BRANCHES = 5
+MAX_DEPTH = 2
+MAX_BRANCHES = 10
 
 # ── Prompt 模板 ──────────────────────────────────────────────
 

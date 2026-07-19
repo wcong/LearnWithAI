@@ -132,9 +132,23 @@ async def plan_page():
 
 @app.get("/mobile")
 async def mobile_root():
-    """移动端主页面"""
+    """移动端首页"""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/static/mobile/home.html")
+
+
+@app.get("/mobile/domain")
+async def mobile_domain_page():
+    """移动端领域页面"""
     from fastapi.responses import RedirectResponse
     return RedirectResponse(url="/static/mobile/index.html")
+
+
+@app.get("/mobile/notes")
+async def mobile_notes_page():
+    """移动端笔记页面"""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/static/mobile/notes.html")
 
 
 @app.get("/mobile/plan")

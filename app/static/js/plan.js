@@ -522,6 +522,10 @@ document.getElementById('planThinkingToggle').addEventListener('click', (e) => {
     toggleThinking();
 });
 
+// 退出登录
+const planLogoutBtn = document.getElementById('logoutBtn');
+if (planLogoutBtn) planLogoutBtn.addEventListener('click', logout);
+
 // ============================================================
 //  Boot
 // ============================================================

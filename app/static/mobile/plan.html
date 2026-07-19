@@ -9,13 +9,27 @@
 </head>
 <body class="m-plan-page">
 
-<!-- ====== 顶部导航栏 ====== -->
+<!-- ====== 顶部导航栏（2 行布局） ====== -->
 <header class="m-plan-header" id="mPlanHeader">
-    <div class="m-plan-logo">🧠 Plan Mode</div>
-    <div class="m-plan-header-right">
-        <span class="m-plan-user-badge" id="mPlanUserBadge"></span>
-        <a href="/static/mobile/index.html" class="m-plan-back-btn">← 主页面</a>
-        <a href="/static/plan.html" class="m-plan-desktop-btn">💻</a>
+    <!-- Row 1: 页面导航 -->
+    <div class="m-plan-nav-row">
+        <a href="/static/mobile/home.html" class="m-plan-nav-logo" title="主页">🌳</a>
+        <nav class="m-plan-page-nav">
+            <a href="/static/mobile/index.html" class="m-plan-page-link" data-page="domain" title="学习领域">📚</a>
+            <a href="/static/mobile/notes.html" class="m-plan-page-link" data-page="notes" title="学习笔记">📝</a>
+            <a href="/static/mobile/plan.html" class="m-plan-page-link active" data-page="plan" title="学习计划">🧠</a>
+            <a href="/static/skills.html" class="m-plan-page-link" data-page="skills" title="技能管理">⚙️</a>
+        </nav>
+        <a href="/plan" class="m-plan-nav-desktop" title="桌面版">🖥️</a>
+    </div>
+    <!-- Row 2: 当前页操作 -->
+    <div class="m-plan-action-row">
+        <span class="m-plan-action-user" id="mPlanUserBadge" style="display:none;"></span>
+        <div class="m-plan-action-group">
+            <button class="m-plan-logout-btn" id="mPLogoutBtn" title="退出">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </button>
+        </div>
     </div>
 </header>
 

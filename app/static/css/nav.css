@@ -1,0 +1,96 @@
+/* ============================================================
+   共享导航栏样式（domain / notes / skills / plan 通用）
+   ============================================================ */
+
+/* ---------- 顶部导航栏（覆盖各页 page-header 布局） ---------- */
+.page-header {
+    /* flex 容器包含 left / nav / right 三段 */
+    gap: 16px;
+}
+
+/* ---------- 中部导航链接 ---------- */
+.header-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    margin: 0 12px;
+    justify-content: center;
+}
+.nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    color: rgba(255, 255, 255, 0.65);
+    text-decoration: none;
+    font-size: 13px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+.nav-link:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+}
+.nav-link.active {
+    color: #fff;
+    background: rgba(64, 158, 255, 0.25);
+    font-weight: 500;
+}
+
+/* "实验" 标签徽章 */
+.nav-badge {
+    display: inline-block;
+    font-size: 9px;
+    padding: 2px 6px;
+    background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+    color: #fff;
+    border-radius: 8px;
+    margin-left: 4px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    line-height: 1.1;
+}
+
+/* ---------- 全新登出按钮（替换原来的 🚪 emoji） ---------- */
+.logout-btn {
+    /* 覆盖旧样式：宽度自适应 + 边色描边 */
+    width: auto !important;
+    height: auto !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.75);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    white-space: nowrap;
+}
+.logout-btn:hover {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.6);
+    color: #ef4444;
+}
+.logout-btn svg {
+    flex-shrink: 0;
+}
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 900px) {
+    .header-nav { gap: 2px; margin: 0 4px; }
+    .nav-link { padding: 6px 8px; font-size: 12px; }
+    .nav-link .nav-icon-text { display: none; }   /* 只留 emoji */
+}
+@media (max-width: 640px) {
+    .header-logo { font-size: 14px; }
+    .header-divider, .header-title { display: none; }
+    .nav-link { padding: 4px 6px; }
+}

@@ -24,6 +24,7 @@
     --info: #909399;
     --safe-bottom: env(safe-area-inset-bottom, 0px);
     --header-height: 48px;
+    --header-height-total: 96px;
 }
 
 /* ========== Reset & Base ========== */
@@ -169,59 +170,149 @@ html, body {
     background: var(--bg-main);
 }
 
-/* ========== Header ========== */
+/* ========== Header (2-row layout) ========== */
 .m-header {
-    height: var(--header-height);
     background: var(--bg-white);
     border-bottom: 1px solid var(--border-light);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 14px;
     flex-shrink: 0;
     position: relative;
     z-index: 10;
 }
 
-.m-header-title {
+/* Row 1: Page navigation */
+.m-nav-row {
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    border-bottom: 1px solid var(--border-light);
+    background: var(--bg-white);
+}
+.m-nav-logo {
+    font-size: 18px;
+    text-decoration: none;
+    flex-shrink: 0;
+    line-height: 1;
+}
+.m-page-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    justify-content: center;
+}
+.m-page-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 18px;
+    color: var(--text-tertiary);
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.m-page-link:hover {
+    background: var(--bg-main);
+    color: var(--text-primary);
+}
+.m-page-link.active {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+.m-nav-desktop {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    text-decoration: none;
     font-size: 16px;
-    font-weight: 600;
+    color: var(--text-tertiary);
+    background: var(--bg-main);
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.m-nav-desktop:hover {
+    background: var(--border);
     color: var(--text-primary);
 }
 
-.m-header-actions {
+/* Row 2: Page actions */
+.m-action-row {
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    background: var(--bg-main);
+    gap: 8px;
+}
+.m-action-user {
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: var(--bg-white);
+    padding: 5px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.m-action-group {
     display: flex;
     align-items: center;
     gap: 6px;
+    flex: 1;
+    justify-content: flex-end;
+    overflow-x: auto;
 }
-
-.m-header-btn {
+.m-action-btn {
     width: 34px;
     height: 34px;
     border: none;
-    background: var(--bg-main);
+    background: var(--bg-white);
     border-radius: 8px;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 15px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--text-secondary);
     transition: background 0.2s;
+    flex-shrink: 0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
+.m-action-btn:hover { background: var(--border-light); }
+.m-action-btn:active { background: var(--border); }
+.m-action-btn[disabled] { opacity: 0.5; cursor: not-allowed; }
 
-.m-header-btn:hover { background: var(--border); }
-
-.m-header-text-btn {
-    font-size: 12px;
-    color: var(--text-tertiary);
-    background: var(--bg-main);
-    padding: 4px 10px;
-    border-radius: 12px;
-    border: none;
+/* 退出按钮（红色 hover 区分危险操作） */
+.m-logout-btn {
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--border);
+    background: var(--bg-white);
+    border-radius: 8px;
     cursor: pointer;
-    white-space: nowrap;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    flex-shrink: 0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
+.m-logout-btn:hover {
+    background: rgba(239,68,68,0.1);
+    border-color: rgba(239,68,68,0.5);
+    color: #ef4444;
+}
+.m-logout-btn:active { background: rgba(239,68,68,0.2); }
 
 /* ========== Main Content ========== */
 .m-chat-panel {
@@ -230,6 +321,34 @@ html, body {
     flex-direction: column;
     overflow: hidden;
     min-height: 0;
+}
+
+/* Main Note editor (full-width) */
+.m-notes-main .m-note-view {
+    background: var(--bg-white);
+    flex: 1;
+}
+.m-notes-main .m-note-editor {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.m-notes-main .m-note-editor .ql-container {
+    flex: 1;
+    overflow-y: auto;
+    font-size: 15px;
+}
+.m-notes-main .m-note-editor .ql-editor {
+    min-height: 200px;
+    padding: 14px 16px;
+}
+.m-notes-main .m-note-editor .ql-toolbar {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 6px;
 }
 
 .m-area-scroll {
@@ -732,6 +851,53 @@ html, body {
 }
 
 /* ========== Note View & Editor (used in overlay) ========== */
+
+/* Mobile Notes Page – Main Area */
+.m-notes-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+    background: var(--bg-white);
+}
+.m-notes-header {
+    padding: 10px 14px;
+    background: var(--bg-white);
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.m-notes-header-text {
+    flex: 1;
+    min-width: 0;
+}
+.m-notes-area-title {
+    font-size: 15px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.m-notes-area-sub {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.m-notes-editor-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+}
+
 .m-note-view {
     flex: 1;
     overflow-y: auto;
@@ -801,7 +967,7 @@ html, body {
 /* ========== Side Overlay ========== */
 .m-side-overlay {
     position: fixed;
-    top: var(--header-height);
+    top: var(--header-height-total);
     bottom: 0;
     z-index: 201;
     width: 85%;
@@ -1628,66 +1794,135 @@ mark.m-rag-highlight { background: #fff3cd; color: #856404; padding: 0 2px; bord
     min-height: 100vh;
 }
 
-/* Plan Header */
+/* Plan Header (2-row layout) */
 .m-plan-header {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    height: 48px;
     background: rgba(15, 23, 42, 0.92);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(0, 212, 255, 0.12);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 14px;
     z-index: 100;
 }
 
-.m-plan-logo {
-    font-size: 16px;
-    font-weight: 600;
-    background: linear-gradient(135deg, #00D4FF, #7C3AED);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.m-plan-header-right {
+/* Row 1: Page nav */
+.m-plan-nav-row {
+    height: 48px;
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     gap: 8px;
 }
+.m-plan-nav-logo {
+    font-size: 18px;
+    text-decoration: none;
+    flex-shrink: 0;
+    line-height: 1;
+}
+.m-plan-page-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    justify-content: center;
+}
+.m-plan-page-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.55);
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.m-plan-page-link:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+.m-plan-page-link.active {
+    background: rgba(0, 212, 255, 0.2);
+    color: #00D4FF;
+}
+.m-plan-nav-desktop {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.06);
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.m-plan-nav-desktop:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
 
-.m-plan-user-badge {
-    font-size: 12px;
+/* Row 2: Plan actions */
+.m-plan-action-row {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    background: rgba(15, 23, 42, 0.85);
+    gap: 8px;
+}
+.m-plan-action-user {
+    font-size: 11px;
     color: #94A3B8;
     background: rgba(255, 255, 255, 0.06);
     padding: 3px 10px;
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.08);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.m-plan-action-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    justify-content: flex-end;
 }
 
-.m-plan-back-btn, .m-plan-desktop-btn {
-    font-size: 12px;
-    color: #94A3B8;
-    text-decoration: none;
-    padding: 4px 10px;
-    border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+.m-plan-logout-btn {
+    width: 34px;
+    height: 34px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.7);
     transition: all 0.2s;
+    flex-shrink: 0;
 }
-
-.m-plan-back-btn:hover, .m-plan-desktop-btn:hover {
-    color: #00D4FF;
-    border-color: #00D4FF;
+.m-plan-logout-btn:hover {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #ef4444;
 }
+.m-plan-logout-btn:active { background: rgba(239, 68, 68, 0.2); }
 
 /* Plan Container */
 .m-plan-container {
     flex: 1;
-    padding-top: 48px;
+    padding-top: 96px;
     display: flex;
     flex-direction: column;
     min-height: 100vh;

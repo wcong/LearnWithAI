@@ -37,17 +37,30 @@
 <!-- ====== 主应用（对话主视图 + 覆盖层） ====== -->
 <div class="m-app-shell" id="mAppShell" style="display:none;">
 
-    <!-- 顶栏 -->
+    <!-- 顶栏（2 行布局） -->
     <header class="m-header" id="mHeader">
-        <span class="m-header-title" id="mHeaderTitle">💬 对话</span>
-        <div class="m-header-actions">
-            <span class="m-header-text-btn" id="mUsernameBadge" style="display:none;"></span>
-            <button class="m-header-action-btn" id="mBtnNewRoot" title="新建领域">➕</button>
-            <button class="m-header-action-btn" id="mBtnRagSearch" title="搜索笔记">🔍</button>
-            <a href="/static/skills.html" class="m-header-action-btn" title="技能管理">⚙️</a>
-            <button class="m-header-btn" id="mBtnAdmin" title="管理面板">📊</button>
-            <button class="m-header-btn" id="mBtnLogout" title="退出">🚪</button>
-            <a href="/domain" style="font-size:11px;color:#c0c4cc;text-decoration:none;padding:2px 6px;">💻</a>
+        <!-- Row 1: 页面导航 -->
+        <div class="m-nav-row">
+            <a href="/static/mobile/home.html" class="m-nav-logo" title="LearnWithAI">🌳</a>
+            <nav class="m-page-nav">
+                <a href="/static/mobile/index.html" class="m-page-link active" data-page="domain" title="学习领域">📚</a>
+                <a href="/static/mobile/notes.html" class="m-page-link" data-page="notes" title="学习笔记">📝</a>
+                <a href="/static/mobile/plan.html" class="m-page-link" data-page="plan" title="学习计划">🧠</a>
+                <a href="/static/skills.html" class="m-page-link" data-page="skills" title="技能管理">⚙️</a>
+            </nav>
+            <a href="/domain" class="m-nav-desktop" title="桌面版">🖥️</a>
+        </div>
+        <!-- Row 2: 当前页操作 -->
+        <div class="m-action-row">
+            <span class="m-action-user" id="mUsernameBadge" style="display:none;"></span>
+            <div class="m-action-group">
+                <button class="m-action-btn" id="mBtnNewRoot" title="新建领域">➕</button>
+                <button class="m-action-btn" id="mBtnRagSearch" title="搜索笔记">🔍</button>
+                <button class="m-action-btn" id="mBtnAdmin" title="管理面板">📊</button>
+                <button class="m-logout-btn" id="mBtnLogout" title="退出登录">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                </button>
+            </div>
         </div>
     </header>
 
