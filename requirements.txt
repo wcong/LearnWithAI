@@ -41,3 +41,7 @@ python-dotenv>=1.2.2
 
 # 用户认证
 python-jose[cryptography]>=3.5.0
+
+# 测试
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
