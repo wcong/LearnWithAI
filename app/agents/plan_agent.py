@@ -19,7 +19,6 @@ from app.agents.streaming_handler import StreamingCallbackHandler
 
 log = logging.getLogger("learnwithai")
 
-MAX_DEPTH = 2
 MAX_BRANCHES = 10
 
 # ── Prompt 模板 ──────────────────────────────────────────────
@@ -242,6 +241,7 @@ async def _explore_area(
     area_name: str,
     parent_context: str,
     depth: int,
+    max_depth: int,
     user_id: int,
     queue: asyncio.Queue,
     callback_handler: StreamingCallbackHandler,
@@ -252,6 +252,9 @@ async def _explore_area(
     2. 提取子领域 → 创建子 Area → 推送 SSE
     3. 递归探索每个子领域
 
+    Args:
+        max_depth: 最大递归深度（由用户传入，默认 2）
+    
     Returns:
         {"area_id": int, "name": str, "depth": int, "children": list, "total_areas": int, "total_messages": int}
     """
@@ -277,6 +280,14 @@ async def _explore_area(
         "message_id": msg.id,
     })
 
+    # 概况生成完成 → 推送阶段信号
+    await _push_event(queue, "progress", {
+        "current_depth": depth,
+        "current_area": area_name,
+        "phase": "overview_complete",
+        "status": f"「{area_name}」概况已生成",
+    })
+
     result = {
         "area_id": area_id,
         "name": area_name,
@@ -287,8 +298,8 @@ async def _explore_area(
     }
 
     # 到达最大深度，不再继续细分
-    if depth >= MAX_DEPTH:
-        log.info("[Plan] Level %d 已达最大深度 %d，停止细分", depth, MAX_DEPTH)
+    if depth >= max_depth:
+        log.info("[Plan] Level %d 已达最大深度 %d，停止细分", depth, max_depth)
         return result
 
     # ── Step 2: 提取子领域 ──
@@ -320,13 +331,13 @@ async def _explore_area(
         })
         result["total_areas"] += 1
 
-    # 更新进度
+    # 子领域就绪 → 推送阶段信号
     await _push_event(queue, "progress", {
         "current_depth": depth,
         "current_area": area_name,
-        "processed_count": 0,
-        "total_count": len(child_areas),
-        "status": f"Level {depth} 已完成，正在深入 {len(child_areas)} 个子领域",
+        "phase": "subdomains_ready",
+        "total_subdomains": len(child_areas),
+        "status": f"发现 {len(child_areas)} 个子领域，正在深入探索",
     })
 
     # ── Step 3: 递归探索每个子领域（同层并发） ──
@@ -338,6 +349,7 @@ async def _explore_area(
             area_name=child_area.name,
             parent_context=child_context,
             depth=depth + 1,
+            max_depth=max_depth,
             user_id=user_id,
             queue=queue,
             callback_handler=callback_handler,
@@ -358,6 +370,16 @@ async def _explore_area(
         result["total_areas"] += cr.get("total_areas", 0)
         result["total_messages"] += cr.get("total_messages", 0)
 
+    # 子领域探索完成 → 推送阶段信号
+    await _push_event(queue, "progress", {
+        "current_depth": depth,
+        "current_area": area_name,
+        "phase": "children_done",
+        "total_subdomains": len(child_areas),
+        "processed_subdomains": len(child_areas),
+        "status": f"「{area_name}」及其子领域探索完成",
+    })
+
     return result
 
 
@@ -366,6 +388,7 @@ async def run_plan_mode(
     user_id: int,
     queue: asyncio.Queue,
     callback_handler: StreamingCallbackHandler,
+    max_depth: int = 2,
 ) -> dict:
     """Plan Mode 主入口
 
@@ -398,6 +421,7 @@ async def run_plan_mode(
             area_name=domain,
             parent_context="",
             depth=0,
+            max_depth=max_depth,
             user_id=user_id,
             queue=queue,
             callback_handler=callback_handler,
@@ -408,9 +432,18 @@ async def run_plan_mode(
             "name": domain,
             "total_areas": result.get("total_areas", 0) + 1,  # +1 包含根节点
             "total_messages": result.get("total_messages", 0),
-            "max_depth": MAX_DEPTH if result.get("depth", 0) >= MAX_DEPTH else result.get("depth", 0),
+            "max_depth": max_depth if result.get("depth", 0) >= max_depth else result.get("depth", 0),
             "finished": True,
         }
+
+        # 全部探索完成 → 推送阶段信号
+        await _push_event(queue, "progress", {
+            "phase": "all_complete",
+            "total_areas": final_result["total_areas"],
+            "total_messages": final_result["total_messages"],
+            "max_depth": final_result["max_depth"],
+            "status": f"全部探索完成！共探索 {final_result['total_areas']} 个领域，{final_result['total_messages']} 条消息",
+        })
 
         log.info("[Plan] Plan Mode 完成: %s, 总领域数=%d, 总消息数=%d",
                  domain, final_result["total_areas"], final_result["total_messages"])

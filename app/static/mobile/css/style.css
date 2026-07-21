@@ -1791,7 +1791,10 @@ mark.m-rag-highlight { background: #fff3cd; color: #856404; padding: 0 2px; bord
 .m-plan-page {
     background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%);
     color: #E2E8F0;
-    min-height: 100vh;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 /* Plan Header (2-row layout) */
@@ -1922,10 +1925,11 @@ mark.m-rag-highlight { background: #fff3cd; color: #856404; padding: 0 2px; bord
 /* Plan Container */
 .m-plan-container {
     flex: 1;
+    min-height: 0;
     padding-top: 96px;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    overflow: hidden;
 }
 
 /* Plan Input Section */
@@ -1995,6 +1999,62 @@ mark.m-rag-highlight { background: #fff3cd; color: #856404; padding: 0 2px; bord
 
 .m-plan-start-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
+/* Plan Depth Row (Segmented Pills) */
+.m-plan-depth-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.m-plan-depth-label {
+    font-size: 12px;
+    color: #94A3B8;
+    font-weight: 500;
+    width: 100%;
+    text-align: center;
+}
+.m-plan-depth-pills {
+    display: inline-flex;
+    gap: 3px;
+    background: rgba(15,23,42,0.6);
+    padding: 3px;
+    border-radius: 10px;
+    border: 1px solid rgba(0,212,255,0.15);
+}
+.m-plan-depth-pill {
+    min-width: 34px;
+    height: 30px;
+    padding: 0 8px;
+    border: none;
+    background: transparent;
+    color: #94A3B8;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+.m-plan-depth-pill:hover {
+    background: rgba(0,212,255,0.1);
+    color: #E2E8F0;
+}
+.m-plan-depth-pill.active {
+    background: linear-gradient(135deg,#00D4FF,#7C3AED);
+    color: #0F172A;
+    box-shadow: 0 2px 8px rgba(0,212,255,0.4);
+}
+.m-plan-depth-hint {
+    font-size: 11px;
+    color: #64748B;
+    background: rgba(0,212,255,0.08);
+    padding: 3px 10px;
+    border-radius: 10px;
+    transition: all 0.2s;
+}
+
 .m-plan-input-hints {
     display: flex;
     flex-wrap: wrap;
@@ -2024,10 +2084,12 @@ mark.m-rag-highlight { background: #fff3cd; color: #856404; padding: 0 2px; bord
 /* Plan Explore View */
 .m-plan-explore-view {
     flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     padding: 14px;
     gap: 12px;
+    overflow-y: auto;
 }
 
 /* Plan Status Bar */
@@ -2114,7 +2176,7 @@ mark.m-rag-highlight { background: #fff3cd; color: #856404; padding: 0 2px; bord
     font-weight: 600;
 }
 
-/* Plan Content Area */
+/* Plan Content Area (Legacy, kept for compatibility) */
 .m-plan-content-area {
     flex: 1;
     position: relative;
@@ -2123,6 +2185,28 @@ mark.m-rag-highlight { background: #fff3cd; color: #856404; padding: 0 2px; bord
     border-radius: 12px;
     background: rgba(30, 41, 59, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Plan Content Split (left = tree, right = messages) */
+.m-plan-content-split {
+    flex: 1 1 auto;
+    display: flex;
+    gap: 10px;
+    min-height: 320px;
+    max-height: calc(100vh - 420px);
+}
+
+.m-plan-content-split .m-plan-content-panel {
+    position: relative;
+    inset: auto;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    overflow: hidden;
 }
 
 .m-plan-content-panel {
@@ -2170,7 +2254,36 @@ mark.m-rag-highlight { background: #fff3cd; color: #856404; padding: 0 2px; bord
     gap: 8px;
     padding: 8px 8px;
     border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
 }
+.m-plan-tree-node-row:hover { background: rgba(0, 212, 255, 0.08); }
+.m-plan-tree-node-row.selected { background: rgba(0, 212, 255, 0.15); }
+
+.m-plan-msg-filter-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    background: rgba(0, 212, 255, 0.08);
+    border-radius: 8px;
+    margin: 0 14px 8px;
+    font-size: 13px;
+    color: #CBD5E1;
+    font-weight: 500;
+}
+
+.m-plan-msg-filter-back {
+    font-size: 11px;
+    padding: 4px 10px;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    border-radius: 6px;
+    background: transparent;
+    color: #00D4FF;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.m-plan-msg-filter-back:hover { background: rgba(0, 212, 255, 0.1); border-color: #00D4FF; }
 
 .m-plan-tree-bullet {
     display: inline-block;
@@ -2336,6 +2449,59 @@ mark.m-rag-highlight { background: #fff3cd; color: #856404; padding: 0 2px; bord
     animation: m-blink 1s steps(1) infinite;
     vertical-align: text-bottom;
     margin-left: 1px;
+}
+
+/* Plan Progress Box */
+.m-plan-progress-box {
+    border-radius: 12px;
+    border: 1px solid rgba(0, 212, 255, 0.12);
+    background: rgba(30, 41, 59, 0.6);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.m-plan-progress-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    user-select: none;
+}
+
+.m-plan-progress-icon {
+    font-size: 14px;
+}
+
+.m-plan-progress-title {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 500;
+    color: #94A3B8;
+}
+
+.m-plan-progress-body {
+    padding: 0 14px 10px;
+}
+
+.m-plan-progress-text {
+    font-size: 12px;
+    color: #64748B;
+    line-height: 1.6;
+}
+
+.m-plan-progress-box.done .m-plan-progress-body {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.m-plan-progress-stat {
+    font-size: 11px;
+    color: #94A3B8;
+    background: rgba(0, 212, 255, 0.08);
+    padding: 2px 10px;
+    border-radius: 10px;
+    white-space: nowrap;
 }
 
 /* Plan Result Section */
@@ -2509,16 +2675,30 @@ mark.m-rag-highlight { background: #fff3cd; color: #856404; padding: 0 2px; bord
 .m-plan-auth-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* Plan Scrollbar */
+.m-plan-explore-view::-webkit-scrollbar,
 .m-plan-tree-body::-webkit-scrollbar,
 .m-plan-message-body::-webkit-scrollbar,
 .m-plan-thinking-body::-webkit-scrollbar {
-    width: 3px;
+    width: 6px;
 }
+.m-plan-explore-view::-webkit-scrollbar-track,
+.m-plan-tree-body::-webkit-scrollbar-track,
+.m-plan-message-body::-webkit-scrollbar-track,
+.m-plan-thinking-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+.m-plan-explore-view::-webkit-scrollbar-thumb,
 .m-plan-tree-body::-webkit-scrollbar-thumb,
 .m-plan-message-body::-webkit-scrollbar-thumb,
 .m-plan-thinking-body::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 3px;
+}
+.m-plan-explore-view::-webkit-scrollbar-thumb:active,
+.m-plan-tree-body::-webkit-scrollbar-thumb:active,
+.m-plan-message-body::-webkit-scrollbar-thumb:active,
+.m-plan-thinking-body::-webkit-scrollbar-thumb:active {
+    background: rgba(0, 212, 255, 0.4);
 }
 
 /* ========== Auth Page (hidden by default) ========== */

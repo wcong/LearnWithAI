@@ -1628,6 +1628,63 @@ mark.rag-highlight { background:#fff3cd; color:#856404; padding:0 2px; border-ra
     cursor:not-allowed;
     transform:none;
 }
+
+/* ---- 层级设置（分段按钮） ---- */
+.plan-depth-row {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-top:14px;
+    flex-wrap:wrap;
+    justify-content:center;
+}
+.plan-depth-label {
+    font-size:13px;
+    color:#94A3B8;
+    font-weight:500;
+    white-space:nowrap;
+}
+.plan-depth-pills {
+    display:inline-flex;
+    gap:3px;
+    background:rgba(15,23,42,0.6);
+    padding:4px;
+    border-radius:12px;
+    border:1px solid rgba(0,212,255,0.15);
+    backdrop-filter:blur(8px);
+}
+.plan-depth-pill {
+    min-width:38px;
+    height:32px;
+    padding:0 10px;
+    border:none;
+    background:transparent;
+    color:#94A3B8;
+    font-size:13px;
+    font-weight:600;
+    border-radius:8px;
+    cursor:pointer;
+    transition:all 0.25s;
+    font-family:inherit;
+}
+.plan-depth-pill:hover {
+    background:rgba(0,212,255,0.1);
+    color:#E2E8F0;
+}
+.plan-depth-pill.active {
+    background:linear-gradient(135deg,#00D4FF,#7C3AED);
+    color:#0F172A;
+    box-shadow:0 2px 10px rgba(0,212,255,0.4);
+}
+.plan-depth-hint {
+    font-size:11px;
+    color:#64748B;
+    background:rgba(0,212,255,0.08);
+    padding:3px 10px;
+    border-radius:10px;
+    transition:all 0.25s;
+}
+
 .plan-input-hints {
     display:flex;
     flex-wrap:wrap;
@@ -1656,10 +1713,12 @@ mark.rag-highlight { background:#fff3cd; color:#856404; padding:0 2px; border-ra
 /* ---- 探索视图 ---- */
 .plan-explore-view {
     flex:1;
+    min-height:0;
     display:flex;
     flex-direction:column;
     padding:20px;
     gap:16px;
+    overflow-y:auto;
     animation:fadeIn 0.4s ease-out;
 }
 
@@ -1717,10 +1776,11 @@ mark.rag-highlight { background:#fff3cd; color:#856404; padding:0 2px; border-ra
 
 /* ---- 主内容区 ---- */
 .plan-content-area {
-    flex:1;
+    flex:1 1 auto;
     display:flex;
     gap:16px;
-    min-height:0;
+    min-height:360px;
+    max-height:calc(100vh - 360px);
 }
 
 /* ---- 树形面板 ---- */
@@ -1767,6 +1827,24 @@ mark.rag-highlight { background:#fff3cd; color:#856404; padding:0 2px; border-ra
 }
 .plan-tree-node-row:hover {
     background:rgba(255,255,255,0.04);
+}
+.plan-tree-node-row.selected {
+    background:rgba(0,212,255,0.12);
+}
+.plan-tree-node-row {
+    cursor:pointer;
+}
+
+.plan-msg-filter-header {
+    display:flex;
+    align-items:center;
+    padding:8px 16px;
+    background:rgba(0,212,255,0.08);
+    border-radius:8px;
+    margin:0 16px 12px;
+    font-size:13px;
+    color:#CBD5E1;
+    font-weight:500;
 }
 .plan-tree-bullet {
     display:inline-block;
@@ -1935,6 +2013,55 @@ mark.rag-highlight { background:#fff3cd; color:#856404; padding:0 2px; border-ra
     animation:blink 1s steps(1) infinite;
     vertical-align:text-bottom;
     margin-left:1px;
+}
+
+/* ---- 探索进度框 ---- */
+.plan-progress-box {
+    border-radius:12px;
+    border:1px solid rgba(0,212,255,0.12);
+    background:rgba(30,41,59,0.6);
+    overflow:hidden;
+    backdrop-filter:blur(8px);
+    flex-shrink:0;
+    animation:fadeInUp 0.3s ease-out;
+}
+.plan-progress-header {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 16px;
+    user-select:none;
+}
+.plan-progress-icon {
+    font-size:16px;
+}
+.plan-progress-title {
+    flex:1;
+    font-size:13px;
+    font-weight:500;
+    color:#94A3B8;
+}
+.plan-progress-body {
+    padding:0 16px 12px;
+}
+.plan-progress-text {
+    font-size:13px;
+    color:#64748B;
+    line-height:1.6;
+}
+.plan-progress-box.done .plan-progress-body {
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+}
+.plan-progress-stat {
+    font-size:12px;
+    color:#94A3B8;
+    background:rgba(0,212,255,0.08);
+    padding:3px 12px;
+    border-radius:10px;
+    white-space:nowrap;
 }
 
 /* ---- 结果展示 ---- */
@@ -2148,21 +2275,30 @@ mark.rag-highlight { background:#fff3cd; color:#856404; padding:0 2px; border-ra
 }
 
 /* ---- 滚动条 ---- */
+.plan-explore-view::-webkit-scrollbar,
 .plan-tree-body::-webkit-scrollbar,
 .plan-message-body::-webkit-scrollbar,
 .plan-thinking-body::-webkit-scrollbar {
-    width:4px;
+    width:8px;
 }
+.plan-explore-view::-webkit-scrollbar-track,
 .plan-tree-body::-webkit-scrollbar-track,
 .plan-message-body::-webkit-scrollbar-track,
 .plan-thinking-body::-webkit-scrollbar-track {
     background:transparent;
 }
+.plan-explore-view::-webkit-scrollbar-thumb,
 .plan-tree-body::-webkit-scrollbar-thumb,
 .plan-message-body::-webkit-scrollbar-thumb,
 .plan-thinking-body::-webkit-scrollbar-thumb {
-    background:rgba(255,255,255,0.08);
+    background:rgba(255,255,255,0.18);
     border-radius:4px;
+}
+.plan-explore-view::-webkit-scrollbar-thumb:hover,
+.plan-tree-body::-webkit-scrollbar-thumb:hover,
+.plan-message-body::-webkit-scrollbar-thumb:hover,
+.plan-thinking-body::-webkit-scrollbar-thumb:hover {
+    background:rgba(0,212,255,0.35);
 }
 
 /* ---- 响应式 ---- */

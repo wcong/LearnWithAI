@@ -43,6 +43,18 @@
                        autofocus>
                 <button class="plan-start-btn" id="planStartBtn">开始探索</button>
             </div>
+            <div class="plan-depth-row">
+                <label class="plan-depth-label">🔬 探索层级</label>
+                <div class="plan-depth-pills" id="planDepthPills">
+                    <button type="button" class="plan-depth-pill" data-value="1">1</button>
+                    <button type="button" class="plan-depth-pill active" data-value="2">2</button>
+                    <button type="button" class="plan-depth-pill" data-value="3">3</button>
+                    <button type="button" class="plan-depth-pill" data-value="5">5</button>
+                    <button type="button" class="plan-depth-pill" data-value="10">10</button>
+                </div>
+                <input type="hidden" id="planDepthInput" value="2">
+                <span class="plan-depth-hint" id="planDepthHint">浅层概览</span>
+            </div>
             <div class="plan-input-hints">
                 <span>热门领域：</span>
                 <button class="plan-hint-btn" data-domain="Transformer 架构优化">Transformer 架构优化</button>
@@ -106,6 +118,17 @@
             </div>
             <div class="plan-thinking-body" id="planThinkingBody">
                 <div class="plan-thinking-content" id="planThinkingContent"></div>
+            </div>
+        </div>
+
+        <!-- 探索进度框 -->
+        <div class="plan-progress-box" id="planProgressBox" style="display:none;">
+            <div class="plan-progress-header">
+                <span class="plan-progress-icon" id="planProgressIcon">⏳</span>
+                <span class="plan-progress-title" id="planProgressTitle">探索进度</span>
+            </div>
+            <div class="plan-progress-body" id="planProgressBody">
+                <span class="plan-progress-text" id="planProgressText">准备中...</span>
             </div>
         </div>
 

@@ -17,6 +17,7 @@ router = APIRouter(prefix="/api/plan", tags=["Plan Mode"])
 
 class StartPlanRequest(BaseModel):
     domain: str
+    max_depth: int = 2
 
 
 @router.post("/start")
@@ -37,7 +38,7 @@ async def start_plan(req: StartPlanRequest, user: User = Depends(get_current_use
     async def event_generator():
         """异步生成器 — 消费队列事件并生成 SSE 流"""
         agent_task = asyncio.create_task(
-            _run_plan_async(domain, user.id, callback_handler, queue)
+            _run_plan_async(domain, user.id, req.max_depth, callback_handler, queue)
         )
 
         while True:
@@ -105,7 +106,7 @@ def _format_sse(event_type: str, data) -> str:
         return f"event: {event_type}\ndata: {json.dumps(data)}\n\n"
 
 
-async def _run_plan_async(domain: str, user_id: int,
+async def _run_plan_async(domain: str, user_id: int, max_depth: int,
                            callback_handler: StreamingCallbackHandler,
                            queue: asyncio.Queue) -> dict:
     """异步执行 Plan Mode，返回最终结果"""
@@ -114,4 +115,5 @@ async def _run_plan_async(domain: str, user_id: int,
         user_id=user_id,
         queue=queue,
         callback_handler=callback_handler,
+        max_depth=max_depth,
     )

@@ -47,6 +47,18 @@
                        autofocus>
                 <button class="m-plan-start-btn" id="mPlanStartBtn">开始探索</button>
             </div>
+            <div class="m-plan-depth-row">
+                <label class="m-plan-depth-label">🔬 探索层级</label>
+                <div class="m-plan-depth-pills" id="mPlanDepthPills">
+                    <button type="button" class="m-plan-depth-pill" data-value="1">1</button>
+                    <button type="button" class="m-plan-depth-pill active" data-value="2">2</button>
+                    <button type="button" class="m-plan-depth-pill" data-value="3">3</button>
+                    <button type="button" class="m-plan-depth-pill" data-value="5">5</button>
+                    <button type="button" class="m-plan-depth-pill" data-value="10">10</button>
+                </div>
+                <input type="hidden" id="mPlanDepthInput" value="2">
+                <span class="m-plan-depth-hint" id="mPlanDepthHint">浅层概览</span>
+            </div>
             <div class="m-plan-input-hints">
                 <span>热门：</span>
                 <button class="m-plan-hint-btn" data-domain="Transformer 架构优化">Transformer</button>
@@ -82,26 +94,20 @@
             </div>
         </div>
 
-        <!-- 视图切换 -->
-        <div class="m-plan-view-switcher">
-            <button class="m-plan-view-btn active" data-view="tree">📂 领域树</button>
-            <button class="m-plan-view-btn" data-view="messages">💬 消息流</button>
-        </div>
-
-        <!-- 树形视图 + 消息流 -->
-        <div class="m-plan-content-area" id="mPlanContentArea">
-            <!-- 树形视图 -->
+        <!-- 树形视图 + 消息流（左右分栏） -->
+        <div class="m-plan-content-split" id="mPlanContentSplit">
+            <!-- 树形视图（左） -->
             <div class="m-plan-content-panel" id="mPlanTreePanel">
                 <div class="m-plan-content-header">📂 领域树</div>
                 <div class="m-plan-tree-body" id="mPlanTreeBody">
                     <div class="m-plan-tree-empty">等待探索开始...</div>
                 </div>
             </div>
-            <!-- 消息流 -->
-            <div class="m-plan-content-panel hidden" id="mPlanMessagePanel">
+            <!-- 消息流（右） -->
+            <div class="m-plan-content-panel" id="mPlanMessagePanel">
                 <div class="m-plan-content-header">💬 探索过程</div>
                 <div class="m-plan-message-body" id="mPlanMessageBody">
-                    <div class="m-plan-message-empty">AI 正在探索，消息将在此展示...</div>
+                    <div class="m-plan-message-empty">请点击左侧领域节点查看 AI 响应...</div>
                 </div>
             </div>
         </div>
@@ -115,6 +121,17 @@
             </div>
             <div class="m-plan-thinking-body" id="mPlanThinkingBody">
                 <div class="m-plan-thinking-content" id="mPlanThinkingContent"></div>
+            </div>
+        </div>
+
+        <!-- 探索进度框 -->
+        <div class="m-plan-progress-box" id="mPlanProgressBox" style="display:none;">
+            <div class="m-plan-progress-header">
+                <span class="m-plan-progress-icon" id="mPlanProgressIcon">⏳</span>
+                <span class="m-plan-progress-title" id="mPlanProgressTitle">探索进度</span>
+            </div>
+            <div class="m-plan-progress-body" id="mPlanProgressBody">
+                <span class="m-plan-progress-text" id="mPlanProgressText">准备中...</span>
             </div>
         </div>
 

@@ -12,6 +12,10 @@ let _messageCount = 0;
 let _treeData = [];
 let _thinkingBuffer = '';
 let _thinkingRafId = null;
+let _messagesByArea = {};    // { areaId: [{role, content, areaName, depth, msgId}, ...] }
+let _selectedAreaId = null;  // 当前选中的领域树节点 ID
+let _phase = 'initial';      // 'initial' | 'thinking' | 'exploring' | 'done'
+let _progressCloseTimer = null; // 进度框自动关闭定时器
 
 // ============================================================
 //  Auth UI
@@ -85,20 +89,6 @@ document.getElementById('mPlanAuthForm').addEventListener('submit', async (e) =>
         showApp();
     } catch (err) { document.getElementById('mPlanAuthError').textContent = err.message; }
     finally { btn.disabled = false; btn.textContent = isLoginMode ? '登录' : '注册'; }
-});
-
-// ============================================================
-//  View Switcher (Tree / Messages)
-// ============================================================
-
-document.querySelectorAll('.m-plan-view-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('.m-plan-view-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const view = btn.dataset.view;
-        document.getElementById('mPlanTreePanel').classList.toggle('hidden', view !== 'tree');
-        document.getElementById('mPlanMessagePanel').classList.toggle('hidden', view !== 'messages');
-    });
 });
 
 // ============================================================
@@ -197,6 +187,20 @@ function renderTree() {
         return;
     }
     container.innerHTML = buildTreeHtml(_treeData, 0);
+    bindTreeNodeEvents();
+}
+
+function bindTreeNodeEvents() {
+    document.querySelectorAll('#mPlanTreeBody .m-plan-tree-node').forEach(node => {
+        if (node.dataset.bound === '1') return;
+        node.dataset.bound = '1';
+        node.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const areaId = parseInt(node.dataset.areaId, 10);
+            if (!areaId) return;
+            showAreaMessages(areaId);
+        });
+    });
 }
 
 function buildTreeHtml(nodes, depth) {
@@ -207,8 +211,8 @@ function buildTreeHtml(nodes, depth) {
         const color = colors[Math.min(n.depth || depth, 10)];
         const indent = (n.depth || depth) * 16;
 
-        let html = `<div class="m-plan-tree-node" style="margin-left:${indent}px">`;
-        html += `<div class="m-plan-tree-node-row">`;
+        let html = `<div class="m-plan-tree-node" data-area-id="${n.id}" style="margin-left:${indent}px">`;
+        html += `<div class="m-plan-tree-node-row ${_selectedAreaId === n.id ? 'selected' : ''}">`;
         html += `<span class="m-plan-tree-bullet" style="background:${color}"></span>`;
         html += `<span class="m-plan-tree-node-name">${escHtml(n.name)}</span>`;
         if (hasChildren) {
@@ -228,6 +232,15 @@ function buildTreeHtml(nodes, depth) {
 // ============================================================
 
 function appendPlanMessage(areaId, areaName, depth, role, content, msgId) {
+    // 按 area_id 存储消息
+    if (areaId !== null && areaId !== undefined) {
+        if (!_messagesByArea[areaId]) _messagesByArea[areaId] = [];
+        _messagesByArea[areaId].push({ role, content, areaName, depth, msgId });
+    }
+
+    // 仅在选中领域匹配时渲染到右侧"探索过程"面板
+    if (_selectedAreaId === null || areaId !== _selectedAreaId) return;
+
     const container = document.getElementById('mPlanMessageBody');
     const empty = container.querySelector('.m-plan-message-empty');
     if (empty) empty.remove();
@@ -292,6 +305,124 @@ function updateStatus(depth, areas, messages, text, isDone) {
 }
 
 // ============================================================
+//  Progress Box
+// ============================================================
+
+function showProgressBox(text) {
+    const box = document.getElementById('mPlanProgressBox');
+    box.style.display = '';
+    box.classList.remove('done');
+    document.getElementById('mPlanProgressIcon').textContent = '⏳';
+    document.getElementById('mPlanProgressTitle').textContent = '探索进度';
+    document.getElementById('mPlanProgressText').textContent = text;
+    // 清除 body 中多余的统计标签
+    document.querySelectorAll('.m-plan-progress-stat').forEach(el => el.remove());
+}
+
+function setProgressText(text) {
+    document.getElementById('mPlanProgressText').textContent = text;
+}
+
+function completeProgressBox(totalAreas, totalMessages, maxDepth) {
+    const box = document.getElementById('mPlanProgressBox');
+    box.classList.add('done');
+    document.getElementById('mPlanProgressIcon').textContent = '✅';
+    document.getElementById('mPlanProgressTitle').textContent = '探索完成';
+    const body = document.getElementById('mPlanProgressBody');
+    body.innerHTML = `
+        <span class="m-plan-progress-text">全部探索完成！</span>
+        <span class="m-plan-progress-stat">📚 领域: ${totalAreas}</span>
+        <span class="m-plan-progress-stat">💬 消息: ${totalMessages}</span>
+        <span class="m-plan-progress-stat">📊 深度: ${maxDepth}</span>
+    `;
+    // 2秒后自动收起
+    if (_progressCloseTimer) clearTimeout(_progressCloseTimer);
+    _progressCloseTimer = setTimeout(() => {
+        box.style.display = 'none';
+        _progressCloseTimer = null;
+    }, 2000);
+}
+
+// ============================================================
+//  Area Message Filter
+// ============================================================
+
+function showAreaMessages(areaId) {
+    _selectedAreaId = areaId;
+    const container = document.getElementById('mPlanMessageBody');
+
+    // 更新树节点选中态
+    document.querySelectorAll('.m-plan-tree-node-row').forEach(r => r.classList.remove('selected'));
+    if (areaId !== null) {
+        const nodeEl = document.querySelector(`.m-plan-tree-node[data-area-id="${areaId}"]`);
+        if (nodeEl) {
+            const row = nodeEl.querySelector('.m-plan-tree-node-row');
+            if (row) row.classList.add('selected');
+        }
+    }
+
+    if (areaId === null) {
+        container.innerHTML = '<div class="m-plan-message-empty">请点击左侧领域节点查看 AI 响应...</div>';
+        return;
+    }
+
+    const areaMsgs = _messagesByArea[areaId];
+    let areaName = '';
+    const node = findTreeAreaNode(_treeData, areaId);
+    if (node) areaName = node.name;
+
+    if (!areaMsgs || areaMsgs.length === 0) {
+        const label = areaName ? `「${escHtml(areaName)}」` : '该领域';
+        container.innerHTML = `<div class="m-plan-message-empty">${label} 正在探索中，请稍候...</div>`;
+        return;
+    }
+
+    renderMessagesView(container, areaMsgs, areaName);
+}
+
+function renderMessagesView(container, messages, areaName) {
+    container.innerHTML = '';
+    if (areaName) {
+        const header = document.createElement('div');
+        header.className = 'm-plan-msg-filter-header';
+        header.innerHTML = `<span>📂 ${escHtml(areaName)}</span>`;
+        container.appendChild(header);
+    }
+    if (messages.length === 0) {
+        container.innerHTML += '<div class="m-plan-message-empty">暂无消息</div>';
+        return;
+    }
+    for (const msg of messages) {
+        const div = document.createElement('div');
+        div.className = `m-plan-message ${msg.role}`;
+        const colors = ['#00D4FF', '#38BDF8', '#60A5FA', '#818CF8', '#A78BFA',
+                        '#C084FC', '#E879F9', '#F472B6', '#FB7185', '#F87171', '#FBBF24'];
+        const tagColor = colors[Math.min(msg.depth, 10)];
+        let tagHtml = '';
+        if (msg.role === 'assistant') {
+            tagHtml = `<div class="m-plan-message-tag" style="border-left:3px solid ${tagColor}">
+                <span class="m-plan-message-depth" style="color:${tagColor}">L${msg.depth}</span>
+            </div>`;
+        }
+        if (msg.role === 'assistant') {
+            let html;
+            try {
+                html = (typeof marked !== 'undefined')
+                    ? marked.parse(msg.content, { breaks: true, gfm: true })
+                    : msg.content;
+            } catch (e) {
+                html = msg.content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
+            div.innerHTML = tagHtml + `<div class="m-plan-message-content">${html}</div>`;
+        } else {
+            div.innerHTML = `<div class="m-plan-message-content">${escHtml(msg.content)}</div>`;
+        }
+        container.appendChild(div);
+    }
+    container.scrollTop = container.scrollHeight;
+}
+
+// ============================================================
 //  Show Result
 // ============================================================
 
@@ -313,11 +444,20 @@ async function startPlan() {
     if (_isExploring) return;
     _isExploring = true;
 
+    const depthInput = document.getElementById('mPlanDepthInput');
+    const maxDepth = depthInput ? Math.max(1, Math.min(10, parseInt(depthInput.value, 10) || 2)) : 2;
+
+    // 重置状态
     _treeData = [];
     _areaCount = 0;
     _messageCount = 0;
+    _messagesByArea = {};
+    _selectedAreaId = null;
+    _phase = 'initial';
+    if (_progressCloseTimer) { clearTimeout(_progressCloseTimer); _progressCloseTimer = null; }
+    document.getElementById('mPlanProgressBox').style.display = 'none';
     document.getElementById('mPlanMessageBody').innerHTML =
-        '<div class="m-plan-message-empty">AI 正在探索，消息将在此展示...</div>';
+        '<div class="m-plan-message-empty">请点击左侧领域节点查看 AI 响应...</div>';
     document.getElementById('mPlanTreeBody').innerHTML =
         '<div class="m-plan-tree-empty">等待探索开始...</div>';
     document.getElementById('mPlanResultSection').style.display = 'none';
@@ -337,7 +477,7 @@ async function startPlan() {
                 'Content-Type': 'application/json',
                 ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
             },
-            body: JSON.stringify({ domain }),
+            body: JSON.stringify({ domain, max_depth: maxDepth }),
         });
 
         if (!res.ok) {
@@ -360,7 +500,10 @@ async function startPlan() {
                 _areaCount++;
                 updateStatus(undefined, _areaCount, undefined, undefined, false);
                 addTreeArea(data.area_id, data.name, data.description, data.parent_id, data.depth);
+                // 根领域自动选中，展示在右侧
                 if (data.depth === 0) {
+                    _selectedAreaId = data.area_id;
+                    renderTree();
                     appendPlanMessage(data.area_id, data.name, data.depth, 'user', `开始探索领域：${data.name}`, null);
                 } else {
                     appendPlanMessage(data.area_id, data.name, data.depth, 'user', `深入探索子领域：${data.name}`, null);
@@ -374,6 +517,26 @@ async function startPlan() {
             progress: (data) => {
                 if (data.status) {
                     updateStatus(data.current_depth, undefined, undefined, data.status, false);
+                }
+                // 阶段处理
+                if (data.phase === 'overview_complete') {
+                    // 第一次流式输出结束 → 收起思考面板，显示进度框
+                    completeThinking();
+                    const panel = document.getElementById('mPlanThinkingPanel');
+                    if (!panel.classList.contains('collapsed')) toggleThinking();
+                    if (data.current_depth === 0) {
+                        _phase = 'exploring';
+                        showProgressBox('概况已生成，正在深入探索子领域...');
+                    } else {
+                        setProgressText(`「${data.current_area}」概况已生成`);
+                    }
+                } else if (data.phase === 'subdomains_ready') {
+                    _phase = 'exploring';
+                    const total = data.total_subdomains || 0;
+                    setProgressText(`发现 ${total} 个子领域，正在并发深入探索...`);
+                } else if (data.phase === 'all_complete') {
+                    _phase = 'done';
+                    completeProgressBox(data.total_areas, data.total_messages, data.max_depth);
                 }
             },
             result: (data) => { resultData = data; },
@@ -420,6 +583,22 @@ document.getElementById('mPlanRestartBtn').addEventListener('click', () => {
     document.getElementById('mPlanDomainInput').value = '';
     switchToInput();
 });
+
+// 层级分段按钮交互
+const M_DEPTH_HINTS = { 1: '快速概览', 2: '浅层概览', 3: '中等深度', 5: '深度探索', 10: '全量递归' };
+document.querySelectorAll('#mPlanDepthPills .m-plan-depth-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('#mPlanDepthPills .m-plan-depth-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const value = parseInt(btn.dataset.value, 10);
+        const hidden = document.getElementById('mPlanDepthInput');
+        if (hidden) hidden.value = value;
+        const hintEl = document.getElementById('mPlanDepthHint');
+        if (hintEl) hintEl.textContent = M_DEPTH_HINTS[value] || '';
+    });
+});
+
+// 树节点点击事件由 renderTree() 后的 bindTreeNodeEvents() 直接绑定
 
 // 退出登录
 const mPlanLogoutBtn = document.getElementById('mPLogoutBtn');
