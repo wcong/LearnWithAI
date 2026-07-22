@@ -161,7 +161,7 @@ async def mobile_plan_page():
 if __name__ == "__main__":
     is_dev = os.getenv("ENV", "development").lower() in ("dev", "development", "local")
     if is_dev:
-        print(f"  🌲 LearnWithAI 开发模式")
+        print(f"  🌲 探知 开发模式")
         print(f"  📡 {settings.HOST}:{settings.PORT}")
         print(f"  🤖 {settings.LLM_PROVIDER} / {settings.LLM_MODEL}")
         print(f"  💾 {get_db_type()}: {settings.DB_PATH if get_db_type() == 'SQLite' else settings.DATABASE_URL or settings.DB_PATH}")

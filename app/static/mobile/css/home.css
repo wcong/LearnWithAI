@@ -22,8 +22,15 @@
     animation: fadeInDown 0.6s ease-out;
 }
 .m-home-logo {
-    font-size: 48px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     line-height: 1;
+}
+.m-home-logo-img {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
     margin-bottom: 8px;
     filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
 }

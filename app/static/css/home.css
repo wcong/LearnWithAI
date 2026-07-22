@@ -26,9 +26,16 @@ html, body {
 }
 
 .home-logo {
-    font-size: 56px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     margin-bottom: 12px;
     filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+}
+.home-logo-img {
+    width: 72px;
+    height: 72px;
+    border-radius: 18px;
 }
 
 .home-title {

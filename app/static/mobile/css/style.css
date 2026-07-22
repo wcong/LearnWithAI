@@ -71,8 +71,15 @@ html, body {
 }
 
 .m-auth-logo {
-    font-size: 48px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     margin-bottom: 6px;
+}
+.m-auth-logo-img {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
 }
 
 .m-auth-card h1 {
@@ -190,8 +197,15 @@ html, body {
     background: var(--bg-white);
 }
 .m-nav-logo {
-    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-decoration: none;
+}
+.m-nav-logo-img {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
     flex-shrink: 0;
     line-height: 1;
 }
@@ -1820,8 +1834,15 @@ mark.m-rag-highlight { background: #fff3cd; color: #856404; padding: 0 2px; bord
     gap: 8px;
 }
 .m-plan-nav-logo {
-    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-decoration: none;
+}
+.m-plan-nav-logo-img {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
     flex-shrink: 0;
     line-height: 1;
 }
@@ -2601,7 +2622,17 @@ mark.m-rag-highlight { background: #fff3cd; color: #856404; padding: 0 2px; bord
     text-align: center;
 }
 
-.m-plan-auth-logo { font-size: 40px; margin-bottom: 6px; }
+.m-plan-auth-logo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 6px;
+}
+.m-plan-auth-logo-img {
+    width: 56px;
+    height: 56px;
+    border-radius: 15px;
+}
 .m-plan-auth-title { font-size: 22px; font-weight: 600; color: #FFFFFF; margin-bottom: 4px; }
 .m-plan-auth-sub { font-size: 13px; color: #64748B; margin-bottom: 20px; }
 
