@@ -44,7 +44,7 @@ def get_db_type() -> str:
 
 def init_db():
     """创建所有表，并自动迁移旧的 areas 表（补充 user_id 列）"""
-    from app.models import Area, ChatMessage, LearningSession, UsageLog, User, NoteEmbedding, LoginHistory, Skill  # noqa: F401
+    from app.models import Area, ChatMessage, LearningSession, UsageLog, User, NoteEmbedding, LoginHistory, Skill, SystemConfig  # noqa: F401
     Base.metadata.create_all(bind=engine)
 
     # 迁移：旧版 areas 表缺少 user_id 列
@@ -55,8 +55,34 @@ def init_db():
     except Exception:
         pass  # 列已存在则忽略
 
+    # 初始化系统默认配置
+    _init_default_configs()
+
     # 创建默认面试准备 Skill（仅首次创建）
     _create_default_skills()
+
+
+def _init_default_configs():
+    """插入系统默认配置（仅首次运行，已存在则跳过）"""
+    from app.models import SystemConfig
+    from sqlalchemy import select
+
+    defaults = {
+        "daily_token_input_limit": "200000",
+        "daily_token_output_limit": "200000",
+    }
+
+    db = SessionLocal()
+    try:
+        for key, value in defaults.items():
+            existing = db.execute(select(SystemConfig).where(SystemConfig.key == key)).scalar()
+            if not existing:
+                db.add(SystemConfig(key=key, value=value))
+        db.commit()
+    except Exception:
+        db.rollback()
+    finally:
+        db.close()
 
 
 def _create_default_skills():

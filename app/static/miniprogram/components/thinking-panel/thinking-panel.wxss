@@ -1,0 +1,82 @@
+/* Thinking 面板组件样式 */
+.thinking-panel {
+  position: fixed;
+  left: 8px;
+  right: 8px;
+  bottom: calc(100px + var(--safe-bottom, 0px));
+  z-index: 49;
+  max-height: 200px;
+  background: #f8f6ff;
+  border-radius: var(--radius-sm);
+  margin: 0 0 0 0;
+  overflow: hidden;
+  border: 1px solid #e8e0ff;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.thinking-panel.collapsed {
+  background: transparent;
+  border-color: transparent;
+}
+
+.thinking-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.thinking-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.thinking-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary-start);
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.thinking-label {
+  font-size: 13px;
+  color: var(--primary-start);
+  font-weight: 500;
+}
+
+.thinking-toggle {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(102, 126, 234, 0.08);
+}
+
+.thinking-body {
+  max-height: 200px;
+}
+
+.thinking-content {
+  padding: 0 12px 8px 12px;
+  max-height: 180px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #5a5578;
+}
+
+.thinking-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.thinking-bottom {
+  height: 1px;
+}

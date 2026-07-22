@@ -295,7 +295,14 @@ function bootApp() {
             document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             if (tab.dataset.tab === 'stats') loadAdminStats();
+            else if (tab.dataset.tab === 'tokens') loadAdminTokenPanel();
         });
+    });
+    // Token limit panel close
+    document.getElementById('btnCloseTokenLimit').addEventListener('click', closeTokenLimitPanel);
+    document.getElementById('btnCloseTokenLimitFooter').addEventListener('click', closeTokenLimitPanel);
+    document.getElementById('tokenLimitOverlay').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeTokenLimitPanel();
     });
 
     // Skill selector
@@ -898,6 +905,9 @@ async function sendMessage() {
         if (!res.ok) {
             if (res.status === 401) { logout(); throw new Error('登录已过期'); }
             const err = await res.json().catch(() => ({}));
+            if (res.status === 429) {
+                throw { _is429: true, detail: err.detail };
+            }
             throw new Error(err.detail || `请求失败 (${res.status})`);
         }
 
@@ -928,7 +938,14 @@ async function sendMessage() {
             appendMessage('assistant', '⚠️ AI 未返回有效回复');
         }
     } catch (err) {
-        appendMessage('assistant', '⚠️ 请求失败：' + err.message);
+        // 检测 429 Token 限额已用完
+        if (err && err._is429) {
+            const d = err.detail;
+            appendMessage('assistant', '⚠️ ' + (d && d.message ? d.message : '免费 Token 额度已用尽'));
+            showTokenLimitPanel(d);
+        } else {
+            appendMessage('assistant', '⚠️ 请求失败：' + (err.message || '未知错误'));
+        }
         // 出错时也标记 thinking 完成
         const icon = document.getElementById('thinkingIcon');
         const title = document.getElementById('thinkingTitle');
@@ -1149,6 +1166,29 @@ function closeAdminPanel() {
     document.getElementById('adminOverlay').classList.remove('active');
 }
 
+// —— Token 限额提示面板 ——
+function showTokenLimitPanel(detail) {
+    const overlay = document.getElementById('tokenLimitOverlay');
+    const detailsEl = document.getElementById('tokenLimitDetails');
+    if (detail && detail.used_prompt !== undefined) {
+        detailsEl.innerHTML =
+            '<div class="limit-row"><span class="label">今日已用输入 Token</span><span class="value over">' +
+            (detail.used_prompt || 0).toLocaleString() + '</span></div>' +
+            '<div class="limit-row"><span class="label">今日已用输出 Token</span><span class="value over">' +
+            (detail.used_completion || 0).toLocaleString() + '</span></div>' +
+            '<div class="limit-row"><span class="label">每日输入 Token 限额</span><span class="value">' +
+            (detail.limit_prompt || 200000).toLocaleString() + '</span></div>' +
+            '<div class="limit-row"><span class="label">每日输出 Token 限额</span><span class="value">' +
+            (detail.limit_output || 200000).toLocaleString() + '</span></div>';
+    } else {
+        detailsEl.innerHTML = '<p style="color:#909399;text-align:center;margin:0;">详情暂不可用</p>';
+    }
+    overlay.classList.add('active');
+}
+function closeTokenLimitPanel() {
+    document.getElementById('tokenLimitOverlay').classList.remove('active');
+}
+
 async function loadAdminStats() {
     const body = document.getElementById('adminBody');
     body.innerHTML = '<div class="admin-loading">加载中...</div>';
@@ -1197,6 +1237,105 @@ function renderAdminStats(data, body) {
     }
 
     body.innerHTML = html;
+}
+
+// —— Admin Token 限额管理面板 ——
+async function loadAdminTokenPanel() {
+    const body = document.getElementById('adminBody');
+    body.innerHTML = '<div class="admin-loading">加载中...</div>';
+    try {
+        const [usageData, config] = await Promise.all([
+            api('/admin/daily-usage'),  // 默认今天
+            api('/admin/config'),
+        ]);
+        renderTokenPanel(body, usageData, config);
+    } catch (err) {
+        body.innerHTML = `<div class="admin-loading" style="color:#ef4444;">⚠️ 加载失败：${escHtml(err.message)}</div>`;
+    }
+}
+
+function renderTokenPanel(body, usageData, config) {
+    const today = new Date().toISOString().slice(0, 10);
+    const inputLimit = config.daily_token_input_limit || '200000';
+    const outputLimit = config.daily_token_output_limit || '200000';
+
+    let html = `
+        <div style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <label style="font-size:13px;color:#606266;font-weight:500;">📅 选择日期：</label>
+            <input type="date" id="tokenDatePicker" value="${today}"
+                   style="padding:6px 10px;border:1px solid #dcdfe6;border-radius:6px;font-size:13px;">
+            <button id="btnQueryDailyUsage" style="padding:6px 16px;background:#409eff;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;">查询</button>
+        </div>
+        <div style="margin-bottom:20px;padding:16px;background:#f0f9ff;border-radius:8px;border:1px solid #b3d8ff;">
+            <div style="font-size:13px;font-weight:600;color:#409eff;margin-bottom:10px;">⚙️ 每日免费 Token 限额配置</div>
+            <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+                <label style="font-size:12px;color:#606266;">输入 Token 限额：
+                    <input type="number" id="cfgInputLimit" value="${escHtml(inputLimit)}"
+                           style="width:120px;padding:6px 8px;border:1px solid #dcdfe6;border-radius:6px;font-size:13px;margin-left:6px;">
+                </label>
+                <label style="font-size:12px;color:#606266;">输出 Token 限额：
+                    <input type="number" id="cfgOutputLimit" value="${escHtml(outputLimit)}"
+                           style="width:120px;padding:6px 8px;border:1px solid #dcdfe6;border-radius:6px;font-size:13px;margin-left:6px;">
+                </label>
+                <button id="btnSaveTokenConfig" style="padding:6px 16px;background:#67c23a;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;">保存</button>
+                <span id="configSaveTip" style="font-size:12px;color:#67c23a;display:none;">✅ 已保存</span>
+            </div>
+        </div>
+        <div style="font-size:14px;font-weight:600;color:#303133;margin-bottom:8px;">
+            📊 用户每日用量（${escHtml(usageData.date)}）
+        </div>
+    `;
+
+    const users = usageData.users || [];
+    if (users.length === 0) {
+        html += '<div class="admin-empty">该日期暂无用量数据</div>';
+    } else {
+        html += '<table class="admin-table"><thead><tr>' +
+            '<th>用户</th><th>输入 Token</th><th>输出 Token</th><th>总计 Token</th>' +
+            '</tr></thead><tbody>';
+        users.forEach(u => {
+            html += `<tr>
+                <td><strong>${escHtml(u.username)}</strong></td>
+                <td>${(u.prompt_tokens || 0).toLocaleString()}</td>
+                <td>${(u.completion_tokens || 0).toLocaleString()}</td>
+                <td><strong>${(u.total_tokens || 0).toLocaleString()}</strong></td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+    }
+
+    body.innerHTML = html;
+
+    // 绑定事件
+    document.getElementById('btnQueryDailyUsage').addEventListener('click', async () => {
+        const date = document.getElementById('tokenDatePicker').value;
+        try {
+            const data = await api('/admin/daily-usage?date=' + date);
+            const configRsp = await api('/admin/config');
+            renderTokenPanel(body, data, configRsp);
+        } catch (err) {
+            body.innerHTML = `<div class="admin-loading" style="color:#ef4444;">⚠️ 查询失败：${escHtml(err.message)}</div>`;
+        }
+    });
+
+    document.getElementById('btnSaveTokenConfig').addEventListener('click', async () => {
+        const inputVal = document.getElementById('cfgInputLimit').value.trim();
+        const outputVal = document.getElementById('cfgOutputLimit').value.trim();
+        const tip = document.getElementById('configSaveTip');
+        try {
+            await api('/admin/config', {
+                method: 'PUT',
+                body: {
+                    daily_token_input_limit: inputVal,
+                    daily_token_output_limit: outputVal,
+                },
+            });
+            tip.style.display = 'inline';
+            setTimeout(() => { tip.style.display = 'none'; }, 3000);
+        } catch (err) {
+            alert('保存失败：' + err.message);
+        }
+    });
 }
 
 

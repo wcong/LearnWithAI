@@ -39,12 +39,20 @@ def _assert_owner(area: Area, user: User):
         raise HTTPException(403, "无权访问此领域")
 
 
+def _build_area_tree(area: Area, db: Session) -> dict:
+    """递归构建 Area 树（纯 Python 手动查询）"""
+    node = area.to_dict()
+    children = db.query(Area).filter(Area.parent_id == area.id).order_by(Area.order).all()
+    node["children"] = [_build_area_tree(c, db) for c in children]
+    return node
+
+
 @router.get("/tree")
 def get_tree(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     roots = db.query(Area).filter(
         Area.parent_id.is_(None), Area.user_id == user.id
     ).order_by(Area.order).all()
-    return [r.to_tree() for r in roots]
+    return [_build_area_tree(r, db) for r in roots]
 
 
 @router.get("")
@@ -52,7 +60,7 @@ def list_areas(db: Session = Depends(get_db), user: User = Depends(get_current_u
     areas = db.query(Area).filter(
         Area.parent_id.is_(None), Area.user_id == user.id
     ).order_by(Area.order).all()
-    return [a.to_tree() for a in areas]
+    return [_build_area_tree(a, db) for a in areas]
 
 
 @router.post("")
@@ -118,7 +126,8 @@ def delete_area(area_id: int, db: Session = Depends(get_db),
 
 
 def _delete_area_recursive(area: Area, db: Session):
-    for child in area.children:
+    children = db.query(Area).filter(Area.parent_id == area.id).all()
+    for child in children:
         _delete_area_recursive(child, db)
     db.delete(area)
 

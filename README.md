@@ -1,4 +1,4 @@
-# 🌳 LearnWithAI
+# 🌲 LearnWithAI
 
 > AI-Assisted Deep Learning Platform powered by **FastAPI + LangChain + SQLite/MySQL**
 
@@ -79,7 +79,7 @@ python main.py
 Expected output:
 
 ```
-  🌳 LearnWithAI 开发模式
+  🌲 LearnWithAI 开发模式
   📡 127.0.0.1:7860
   🤖 openai / gpt-4o-mini
   💾 SQLite: /path/to/LearnWithAI/data/learn.db

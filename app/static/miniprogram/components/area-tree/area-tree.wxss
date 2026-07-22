@@ -1,0 +1,93 @@
+/* 领域树组件样式 */
+.area-tree {
+  width: 100%;
+}
+
+.tree-node-wrapper {
+  /* 每个节点包裹层 */
+}
+
+.tree-node {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.2s;
+  border-left: 3px solid transparent;
+  min-height: 40px;
+  box-sizing: border-box;
+}
+
+.tree-node:active {
+  background: rgba(102, 126, 234, 0.08);
+}
+
+.tree-node.active {
+  background: rgba(102, 126, 234, 0.12);
+  border-left-color: var(--primary-start);
+  color: var(--primary-start);
+  font-weight: 500;
+}
+
+.tree-node.selected {
+  background: rgba(102, 126, 234, 0.08);
+}
+
+.tree-toggle {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.tree-toggle.visible {
+  /* 可见 */
+}
+
+.tree-toggle.invisible {
+  visibility: hidden;
+}
+
+.toggle-icon {
+  font-size: 10px;
+  color: var(--text-secondary);
+  transition: transform 0.2s;
+  display: inline-block;
+}
+
+.toggle-icon.expanded {
+  transform: rotate(90deg);
+}
+
+.node-icon {
+  font-size: 16px;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.node-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.node-count {
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: #f0f2f5;
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-left: 6px;
+  flex-shrink: 0;
+}
+
+.children-container {
+  /* 子节点容器 */
+}

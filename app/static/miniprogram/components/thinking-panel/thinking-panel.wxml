@@ -1,0 +1,17 @@
+<!-- AI Thinking 面板组件 -->
+<view class="thinking-panel {{collapsed ? 'collapsed' : ''}}">
+  <view class="thinking-header" bindtap="onToggle">
+    <view class="thinking-title">
+      <view class="thinking-dot"></view>
+      <text class="thinking-label" wx:if="{{!collapsed}}">AI 思考中...</text>
+      <text class="thinking-label" wx:else>AI 思考过程 ({{content.length}}字)</text>
+    </view>
+    <text class="thinking-toggle">{{collapsed ? '展开' : '折叠'}}</text>
+  </view>
+  <view class="thinking-body" wx:if="{{!collapsed}}">
+    <scroll-view class="thinking-content" scroll-y scroll-with-animation="true" scroll-into-view="thinking-bottom">
+      <text class="thinking-text">{{content}}</text>
+      <view id="thinking-bottom" class="thinking-bottom"></view>
+    </scroll-view>
+  </view>
+</view>

@@ -14,7 +14,7 @@
 <!-- ====== 登录页 ====== -->
 <div class="auth-page" id="authPage">
     <div class="auth-card">
-        <div class="auth-logo">🌳</div>
+        <div class="auth-logo">🌲</div>
         <h1>LearnWithAI</h1>
         <p class="auth-sub">AI 辅助深度学习平台</p>
         <div class="auth-tabs">
@@ -37,13 +37,13 @@
     <!-- 顶部导航 -->
     <header class="page-header">
         <div class="header-left">
-            <span class="header-logo">🌳 LearnWithAI</span>
+            <span class="header-logo">🌲 LearnWithAI</span>
         </div>
         <nav class="header-nav">
             <a href="/domain" class="nav-link active" data-page="domain">📚 <span class="nav-icon-text">学习领域</span></a>
             <a href="/notes" class="nav-link" data-page="notes">📝 <span class="nav-icon-text">学习笔记</span></a>
             <a href="/static/skills.html" class="nav-link" data-page="skills">⚙️ <span class="nav-icon-text">技能管理</span></a>
-            <a href="/plan" class="nav-link" data-page="plan">🧠 <span class="nav-icon-text">学习计划</span><span class="nav-badge">实验</span></a>
+            <a href="/plan" class="nav-link" data-page="plan">💡 <span class="nav-icon-text">学习计划</span><span class="nav-badge">实验</span></a>
         </nav>
         <div class="header-right">
             <span class="user-badge" id="usernameBadge"></span>
@@ -161,6 +161,23 @@
     </div>
 </div>
 
+<!-- ====== Token 限额提示面板 ====== -->
+<div class="token-limit-overlay" id="tokenLimitOverlay">
+    <div class="token-limit-modal">
+        <div class="token-limit-header">
+            <span class="token-limit-label">⚠️ 免费 Token 额度已用尽</span>
+            <button class="token-limit-close" id="btnCloseTokenLimit">✕</button>
+        </div>
+        <div class="token-limit-body" id="tokenLimitBody">
+            <p style="font-size:15px;color:#333;margin-bottom:16px;">您今日的免费 Token 额度已用尽，请明天再来。</p>
+            <div id="tokenLimitDetails" class="token-limit-details"></div>
+        </div>
+        <div class="token-limit-footer">
+            <button class="token-limit-btn" id="btnCloseTokenLimitFooter">我知道了</button>
+        </div>
+    </div>
+</div>
+
 <!-- ====== Admin 统计面板 ====== -->
 <div class="admin-overlay" id="adminOverlay">
     <div class="admin-modal">
@@ -173,6 +190,7 @@
         </div>
         <div class="admin-tabs">
             <button class="admin-tab active" data-tab="stats">📈 统计</button>
+            <button class="admin-tab" data-tab="tokens">🔐 Token 限额</button>
         </div>
         <div class="admin-body" id="adminBody">
             <div class="admin-loading">加载中...</div>

@@ -47,7 +47,7 @@ After logging in, the home page (`/static/home.html`) shows four navigation card
 | **📚 Learning Domains** | Manage knowledge tree & chat with AI tutor |
 | **📝 Learning Notes** | Rich text editor for each domain |
 | **⚙️ Skill Management** | Create and manage AI prompt templates |
-| **🧠 Learning Plan** (Experimental) | AI auto-explores a domain and generates a learning path |
+| **💡 Learning Plan** (Experimental) | AI auto-explores a domain and generates a learning path |
 
 ---
 
@@ -167,7 +167,7 @@ Plan Mode automatically explores a domain and generates a structured learning tr
 
 ### How to Use
 
-1. Navigate to `/plan` (or click **🧠 Learning Plan** on the home page)
+1. Navigate to `/plan` (or click **💡 Learning Plan** on the home page)
 2. Enter a domain name (e.g., "Transformer Architecture", "Quantum Computing")
 3. Set the **maximum exploration depth** (default: 2)
 4. Click **Start**

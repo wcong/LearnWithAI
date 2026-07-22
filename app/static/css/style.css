@@ -2339,3 +2339,79 @@ mark.rag-highlight { background:#fff3cd; color:#856404; padding:0 2px; border-ra
     border-bottom-color:#409eff;
     font-weight:500;
 }
+/* ── Token 限额提示面板 ── */
+.token-limit-overlay {
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.45);
+    z-index:2000;
+    display:none;
+    align-items:center;
+    justify-content:center;
+}
+.token-limit-overlay.active {
+    display:flex;
+}
+.token-limit-modal {
+    background:#fff;
+    border-radius:12px;
+    width:420px;
+    max-width:90vw;
+    box-shadow:0 8px 30px rgba(0,0,0,0.2);
+    overflow:hidden;
+}
+.token-limit-header {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:16px 20px;
+    background:#fff6f0;
+    border-bottom:1px solid #ffdcc5;
+}
+.token-limit-label {
+    font-size:16px;
+    font-weight:600;
+    color:#e6a23c;
+}
+.token-limit-close {
+    background:none;
+    border:none;
+    font-size:18px;
+    color:#999;
+    cursor:pointer;
+    padding:0 4px;
+}
+.token-limit-close:hover { color:#333; }
+.token-limit-body {
+    padding:20px;
+}
+.token-limit-details {
+    background:#f9f9f9;
+    border-radius:8px;
+    padding:14px;
+    font-size:13px;
+    line-height:1.8;
+}
+.token-limit-details .limit-row {
+    display:flex;
+    justify-content:space-between;
+    padding:4px 0;
+}
+.token-limit-details .limit-row .label { color:#909399; }
+.token-limit-details .limit-row .value { font-weight:600; }
+.token-limit-details .limit-row .value.over { color:#e6a23c; }
+.token-limit-footer {
+    padding:12px 20px;
+    text-align:right;
+    border-top:1px solid #eee;
+}
+.token-limit-btn {
+    padding:8px 24px;
+    background:#409eff;
+    color:#fff;
+    border:none;
+    border-radius:6px;
+    font-size:13px;
+    cursor:pointer;
+}
+.token-limit-btn:hover { background:#337ecc; }

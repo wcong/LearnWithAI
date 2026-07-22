@@ -1,0 +1,182 @@
+/* 技能管理页面样式 */
+.skills-page {
+  min-height: 100vh;
+  background: var(--bg-color);
+  padding-bottom: 36px;
+}
+
+.skills-header {
+  background: var(--primary-gradient);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 100;
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.add-header-btn {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 6px 14px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 8px;
+  line-height: 1.6;
+}
+
+/* 技能列表 */
+.skill-list {
+  padding: 12px;
+  height: calc(100vh - 120px);
+}
+
+/* 技能卡片 */
+.skill-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.skill-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.skill-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.skill-card-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.skill-card-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #e8f4fd;
+  color: #409eff;
+  flex-shrink: 0;
+}
+
+.skill-card-tag.personal {
+  background: #f0f9eb;
+  color: #67c23a;
+}
+
+.skill-card-tag.default {
+  background: #fdf6ec;
+  color: #e6a23c;
+}
+
+.skill-card-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.action-icon {
+  font-size: 18px;
+  padding: 4px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.action-icon:active {
+  opacity: 1;
+}
+
+.action-icon.danger {
+  /* 保留原色 */
+}
+
+.skill-card-desc {
+  display: block;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.skill-card-preview {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.preview-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.preview-text {
+  display: block;
+  font-size: 13px;
+  color: var(--text-regular);
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  word-break: break-all;
+}
+
+/* 悬浮按钮 */
+.fab-btn {
+  position: fixed;
+  right: 20px;
+  bottom: 70px;
+  width: 52px;
+  height: 52px;
+  background: var(--primary-gradient);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+  z-index: 50;
+  cursor: pointer;
+}
+
+.fab-btn:active {
+  transform: scale(0.95);
+}
+
+.fab-icon {
+  font-size: 28px;
+  color: #fff;
+  font-weight: 200;
+  line-height: 1;
+}
+
+/* 弹窗表单扩展 */
+.template-textarea {
+  height: 120px;
+  font-family: monospace;
+  font-size: 13px;
+}
+
+/* 空状态 */
+.skills-page .empty-state {
+  padding: 80px 20px;
+  text-align: center;
+}

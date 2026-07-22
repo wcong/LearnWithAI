@@ -1,0 +1,179 @@
+<!-- Plan Mode 暗色主题页面 -->
+<view class="plan-page">
+  <!-- 顶部导航 -->
+  <view class="plan-header" style="padding-top: {{statusBarHeight + 20}}px;">
+    <view class="header-left">
+      <text class="header-btn back-btn" bindtap="goBack">←</text>
+      <text class="header-title">学习计划</text>
+    </view>
+    <view class="header-badge" wx:if="{{status}}">
+      <text class="status-dot {{status}}"></text>
+      <text class="status-text">{{statusText}}</text>
+    </view>
+  </view>
+
+  <!-- 探索中状态 -->
+  <view class="plan-exploring" wx:if="{{exploring}}">
+    <!-- 状态栏 -->
+    <view class="status-bar-custom">
+      <view class="status-item">
+        <text class="status-label">探索层级</text>
+        <text class="status-value">{{maxDepth}}</text>
+      </view>
+      <view class="status-item">
+        <text class="status-label">已发现领域</text>
+        <text class="status-value">{{areaCount}}</text>
+      </view>
+      <view class="status-item">
+        <text class="status-label">已接收消息</text>
+        <text class="status-value">{{messageCount}}</text>
+      </view>
+    </view>
+
+    <!-- 进度条 -->
+    <view class="progress-bar">
+      <view class="progress-fill" style="width: {{progressPercent}}%"></view>
+    </view>
+
+    <!-- 领域树预览 -->
+    <view class="plan-tree-section">
+      <view class="section-title">探索领域树</view>
+      <scroll-view class="plan-tree" scroll-y>
+        <area-tree
+          treeData="{{planAreaTree}}"
+          depth="0"
+          currentId="{{null}}"
+          bind:nodeTap="onPlanAreaTap"
+        />
+        <view class="empty-state" wx:if="{{planAreaTree.length === 0}}">
+          <text class="empty-text">等待探索结果...</text>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- Thinking 面板 -->
+    <thinking-panel
+      id="planThinkingPanel"
+      content="{{thinkingContent}}"
+      collapsed="{{thinkingCollapsed}}"
+    />
+
+    <!-- 消息流 -->
+    <view class="plan-messages">
+      <view class="section-title">探索消息</view>
+      <scroll-view class="messages-scroll" scroll-y scroll-with-animation>
+        <view wx:for="{{planMessages}}" wx:for-item="msg" wx:key="msg.id || msg.index" class="plan-msg-item {{msg.type}}">
+          <view class="plan-msg-header">
+            <text class="plan-msg-area" wx:if="{{msg.area_name}}">{{msg.area_name}}</text>
+            <text class="plan-msg-time">{{msg.time}}</text>
+          </view>
+          <text class="plan-msg-content">{{msg.content}}</text>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 进度框 -->
+    <view class="progress-box" wx:if="{{progressText}}">
+      <text class="progress-text">{{progressText}}</text>
+    </view>
+
+    <!-- 停止按钮 -->
+    <view class="plan-actions">
+      <button class="stop-btn" bindtap="stopExploration">停止探索</button>
+    </view>
+  </view>
+
+  <!-- 未开始状态 -->
+  <view class="plan-start" wx:else>
+    <!-- 品牌简介 -->
+    <view class="plan-intro">
+      <text class="intro-icon">🚀</text>
+      <text class="intro-title">AI 学习路径探索</text>
+      <text class="intro-desc">输入一个学习主题，AI 将自动递归探索并为你构建完整的学习路径和知识体系</text>
+    </view>
+
+    <!-- 输入区 -->
+    <view class="plan-input-section">
+      <view class="form-item">
+        <view class="form-label">学习主题</view>
+        <textarea
+          class="plan-textarea"
+          placeholder="例如：量子力学入门&#10;Python 数据分析&#10;机器学习基础"
+          value="{{topic}}"
+          bindinput="onTopicInput"
+          maxlength="500"
+          auto-height
+        ></textarea>
+      </view>
+
+      <!-- 快捷提示 -->
+      <view class="prompt-suggestions">
+        <text class="suggestion-title">热门主题</text>
+        <scroll-view class="suggestion-scroll" scroll-x>
+          <view class="suggestion-chip" wx:for="{{suggestions}}" wx:for-item="s" wx:key="s" bindtap="selectSuggestion" data-topic="{{s}}">
+            <text>{{s}}</text>
+          </view>
+        </scroll-view>
+      </view>
+
+      <!-- 深度选择 -->
+      <view class="depth-selector">
+        <text class="form-label">探索层级深度</text>
+        <view class="depth-options">
+          <view class="depth-chip {{maxDepth === 1 ? 'active' : ''}}" bindtap="setDepth" data-depth="1">1</view>
+          <view class="depth-chip {{maxDepth === 2 ? 'active' : ''}}" bindtap="setDepth" data-depth="2">2</view>
+          <view class="depth-chip {{maxDepth === 3 ? 'active' : ''}}" bindtap="setDepth" data-depth="3">3</view>
+          <view class="depth-chip {{maxDepth === 5 ? 'active' : ''}}" bindtap="setDepth" data-depth="5">5</view>
+          <view class="depth-chip {{maxDepth === 10 ? 'active' : ''}}" bindtap="setDepth" data-depth="10">10</view>
+        </view>
+      </view>
+
+      <button class="start-btn" bindtap="startExploration" disabled="{{!topic.trim() || starting}}">
+        {{starting ? '启动中...' : '开始探索 🚀'}}
+      </button>
+    </view>
+
+    <!-- 结果展示 -->
+    <view class="plan-results" wx:if="{{showResults}}">
+      <view class="section-title">探索结果统计</view>
+      <view class="stats-grid">
+        <view class="stat-item">
+          <text class="stat-value">{{resultStats.areaCount || 0}}</text>
+          <text class="stat-label">创建领域</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-value">{{resultStats.messageCount || 0}}</text>
+          <text class="stat-label">AI 消息</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-value">{{resultStats.duration || '--'}}</text>
+          <text class="stat-label">探索时长</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部导航 -->
+  <view class="bottom-nav plan-bottom-nav">
+    <view class="nav-item" bindtap="goHome">
+      <text class="nav-icon">🏠</text>
+      <text>首页</text>
+    </view>
+    <view class="nav-item" bindtap="goToDomain">
+      <text class="nav-icon">🌲</text>
+      <text>领域</text>
+    </view>
+    <view class="nav-item" bindtap="goToNotes">
+      <text class="nav-icon">📝</text>
+      <text>笔记</text>
+    </view>
+    <view class="nav-item active">
+      <text class="nav-icon">🚀</text>
+      <text>计划</text>
+    </view>
+    <view class="nav-item" bindtap="goToSkills">
+      <text class="nav-icon">🔧</text>
+      <text>技能</text>
+    </view>
+  </view>
+</view>

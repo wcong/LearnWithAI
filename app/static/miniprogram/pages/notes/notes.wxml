@@ -1,0 +1,101 @@
+<!-- 笔记管理页面 -->
+<view class="notes-page">
+  <!-- 顶部导航 -->
+  <view class="notes-header" style="padding-top: {{statusBarHeight + 20}}px;">
+    <view class="header-left">
+      <text class="header-btn" bindtap="toggleDrawer">☰</text>
+      <text class="header-title" wx:if="{{currentAreaName}}">{{currentAreaName}} - 笔记</text>
+      <text class="header-title" wx:else>学习笔记</text>
+    </view>
+    <view class="header-right">
+      <button class="save-header-btn" wx:if="{{editing && hasChange}}" bindtap="onSaveNote">保存</button>
+    </view>
+  </view>
+
+  <!-- 左侧领域树抽屉 -->
+  <view class="drawer-overlay {{drawerOpen ? 'show' : ''}}" bindtap="closeDrawer"></view>
+  <view class="drawer {{drawerOpen ? 'show' : ''}}">
+    <view class="drawer-header">
+      <text>选择领域</text>
+      <text class="header-btn" bindtap="closeDrawer">✕</text>
+    </view>
+    <view class="drawer-body">
+      <area-tree
+        treeData="{{areaTree}}"
+        depth="0"
+        currentId="{{currentAreaId}}"
+        bind:nodeTap="onAreaSelect"
+      />
+    </view>
+  </view>
+
+  <!-- 主内容区 -->
+  <view class="notes-content">
+    <view class="note-toolbar">
+      <view class="toolbar-tabs">
+        <view class="tab-item {{!editing ? 'active' : ''}}" bindtap="switchToView">查看</view>
+        <view class="tab-item {{editing ? 'active' : ''}}" bindtap="switchToEdit">编辑</view>
+      </view>
+    </view>
+
+    <view class="note-container" wx:if="{{currentAreaId}}">
+      <!-- 查看模式 -->
+      <scroll-view class="note-view scroll-view" wx:if="{{!editing}}" scroll-y>
+        <rich-text wx:if="{{noteContent}}" nodes="{{noteContent}}" class="note-rich"></rich-text>
+        <view class="empty-state" wx:else>
+          <text class="empty-icon">📝</text>
+          <text class="empty-text">暂无笔记</text>
+          <text class="empty-hint">切换到编辑模式开始记录</text>
+        </view>
+      </scroll-view>
+
+      <!-- 编辑模式 -->
+      <view class="note-edit" wx:else>
+        <textarea
+          class="note-textarea"
+          value="{{editContent}}"
+          bindinput="onEditInput"
+          placeholder="请输入笔记内容（支持 HTML）..."
+          auto-height
+          maxlength="50000"
+        ></textarea>
+        <view class="edit-actions">
+          <button class="save-btn" bindtap="onSaveNote" disabled="{{!hasChange}}">
+            {{saving ? '保存中...' : '保存笔记'}}
+          </button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 未选择领域 -->
+    <view class="empty-state" wx:if="{{!currentAreaId}}">
+      <text class="empty-icon">📚</text>
+      <text class="empty-text">请选择一个学习领域</text>
+      <text class="empty-hint">点击左上角 ☰ 展开领域树</text>
+    </view>
+  </view>
+
+  <!-- 底部导航 -->
+  <view class="bottom-nav">
+    <view class="nav-item" bindtap="goHome">
+      <text class="nav-icon">🏠</text>
+      <text>首页</text>
+    </view>
+    <view class="nav-item" bindtap="goToDomain">
+      <text class="nav-icon">🌲</text>
+      <text>领域</text>
+    </view>
+    <view class="nav-item active">
+      <text class="nav-icon">📝</text>
+      <text>笔记</text>
+    </view>
+    <view class="nav-item" bindtap="goToPlan">
+      <text class="nav-icon">🚀</text>
+      <text>计划</text>
+    </view>
+    <view class="nav-item" bindtap="goToSkills">
+      <text class="nav-icon">🔧</text>
+      <text>技能</text>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,29 @@
+{
+  "pages": [
+    "pages/login/login",
+    "pages/home/home",
+    "pages/domain/domain",
+    "pages/notes/notes",
+    "pages/plan/plan",
+    "pages/skills/skills"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#667eea",
+    "navigationBarTitleText": "探知",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f5f7fa",
+    "backgroundTextStyle": "light",
+    "navigationStyle": "custom"
+  },
+  "usingComponents": {
+    "area-tree": "/components/area-tree/area-tree",
+    "thinking-panel": "/components/thinking-panel/thinking-panel",
+    "note-viewer": "/components/note-viewer/note-viewer"
+  },
+  "useExtendedLib": {
+    "weui": true
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

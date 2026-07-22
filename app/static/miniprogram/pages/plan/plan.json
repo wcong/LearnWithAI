@@ -1,0 +1,7 @@
+{
+  "usingComponents": {
+    "thinking-panel": "/components/thinking-panel/thinking-panel",
+    "area-tree": "/components/area-tree/area-tree"
+  },
+  "navigationStyle": "custom"
+}

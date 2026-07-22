@@ -1,4 +1,4 @@
-# 🌳 LearnWithAI
+# 🌲 LearnWithAI
 
 > AI 辅助深度学习平台，基于 **FastAPI + LangChain + SQLite/MySQL**
 
@@ -79,7 +79,7 @@ python main.py
 终端输出示例：
 
 ```
-  🌳 LearnWithAI 开发模式
+  🌲 LearnWithAI 开发模式
   📡 127.0.0.1:7860
   🤖 openai / gpt-4o-mini
   💾 SQLite: /path/to/LearnWithAI/data/learn.db

@@ -1,0 +1,7 @@
+{
+  "usingComponents": {
+    "note-viewer": "/components/note-viewer/note-viewer",
+    "area-tree": "/components/area-tree/area-tree"
+  },
+  "navigationStyle": "custom"
+}

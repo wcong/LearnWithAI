@@ -1,0 +1,279 @@
+<!-- 核心领域+AI对话页面 -->
+<view class="domain-page">
+  <!-- 顶部导航 -->
+  <view class="domain-header" style="padding-top: {{statusBarHeight + 20}}px;">
+    <view class="header-left">
+      <text class="header-btn menu-btn" bindtap="toggleDrawer">☰</text>
+      <text class="header-title" wx:if="{{currentAreaName}}">{{currentAreaName}}</text>
+      <text class="header-title" wx:else>选择学习领域</text>
+    </view>
+    <view class="header-right">
+      <text class="header-btn" bindtap="onSearch">🔍</text>
+      <text class="header-btn" bindtap="toggleNoteDrawer" wx:if="{{currentAreaId}}">📝</text>
+    </view>
+  </view>
+
+  <!-- 左侧领域树抽屉 -->
+  <view class="drawer-overlay {{drawerOpen ? 'show' : ''}}" bindtap="closeDrawer"></view>
+  <view class="drawer {{drawerOpen ? 'show' : ''}}">
+    <view class="drawer-header">
+      <text>学习领域</text>
+      <text class="header-btn" bindtap="closeDrawer">✕</text>
+    </view>
+    <view class="drawer-body">
+      <view class="drawer-actions">
+        <button class="action-btn" bindtap="onAddArea">+ 新建领域</button>
+      </view>
+      <area-tree
+        treeData="{{areaTree}}"
+        depth="0"
+        currentId="{{currentAreaId}}"
+        bind:nodeTap="onAreaSelect"
+        bind:nodeLongPress="onAreaLongPress"
+      />
+      <view class="empty-state" wx:if="{{areaTree.length === 0 && !loadingAreas}}">
+        <text>还没有学习领域，点击上方按钮创建</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 右侧笔记抽屉 -->
+  <view class="drawer-overlay right {{noteDrawerOpen ? 'show' : ''}}" bindtap="closeNoteDrawer"></view>
+  <view class="drawer right {{noteDrawerOpen ? 'show' : ''}}">
+    <view class="drawer-header">
+      <text>笔记</text>
+      <text class="header-btn" bindtap="closeNoteDrawer">✕</text>
+    </view>
+    <view class="drawer-body">
+      <note-viewer
+        id="noteViewer"
+        content="{{noteContent}}"
+        areaName="{{currentAreaName}}"
+        areaId="{{currentAreaId}}"
+        bind:save="onNoteSave"
+      />
+    </view>
+  </view>
+
+  <!-- 主内容区 -->
+  <view class="domain-content {{drawerOpen ? 'drawer-open' : ''}} {{noteDrawerOpen ? 'note-open' : ''}}">
+    <!-- 消息列表 -->
+    <scroll-view class="message-list" scroll-y scroll-with-animation="{{autoScroll}}" bindscrolltoupper="loadMoreMessages" upper-threshold="100">
+      <view wx:for="{{messages}}" wx:for-item="msg" wx:key="msg.id || msg.index" class="message-item {{msg.role}}">
+        <view class="msg-avatar">
+          <text wx:if="{{msg.role === 'user'}}">👤</text>
+          <text wx:else>🤖</text>
+        </view>
+        <view class="msg-bubble">
+          <view class="msg-content">
+            <rich-text nodes="{{msg.displayContent}}" wx:if="{{msg.role === 'assistant' && msg.displayContent}}"></rich-text>
+            <text wx:else>{{msg.content}}</text>
+          </view>
+          <view class="msg-time" wx:if="{{msg.created_at}}">{{msg.created_at}}</view>
+        </view>
+      </view>
+
+      <!-- 加载更多 -->
+      <view class="loading-more" wx:if="{{hasMoreMessages}}">
+        <view class="loading-spinner"></view>
+      </view>
+
+      <!-- 空状态 -->
+      <view class="empty-chat" wx:if="{{messages.length === 0 && currentAreaId && !loadingChat}}">
+        <text class="empty-icon">💬</text>
+        <text class="empty-text">选择一个领域，开始与 AI 对话学习</text>
+        <text class="empty-hint">你可以问任何关于该领域的问题</text>
+      </view>
+
+      <view class="empty-chat" wx:if="{{!currentAreaId && !loadingChat}}">
+        <text class="empty-icon">🌲</text>
+        <text class="empty-text">请从左侧菜单中选择一个学习领域</text>
+        <text class="empty-hint">点击左上角 ☰ 展开领域树</text>
+      </view>
+
+      <view id="msg-bottom"></view>
+    </scroll-view>
+
+    <!-- Thinking 面板 -->
+    <thinking-panel
+      id="thinkingPanel"
+      content="{{thinkingContent}}"
+      collapsed="{{thinkingCollapsed}}"
+      wx:if="{{thinkingContent}}"
+    />
+
+    <!-- 输入区 -->
+    <view class="input-area">
+      <!-- 技能选择 -->
+      <view class="skill-selector" bindtap="showSkillSelector" wx:if="{{currentAreaId}}">
+        <text class="skill-tag">{{selectedSkillName || '默认技能'}}</text>
+        <text class="skill-arrow">▼</text>
+      </view>
+
+      <view class="input-row">
+        <textarea
+          class="chat-input"
+          value="{{inputMessage}}"
+          bindinput="onInputChange"
+          placeholder="{{currentAreaId ? '输入你的问题...' : '请先选择学习领域'}}"
+          maxlength="2000"
+          auto-height
+          disabled="{{!currentAreaId || sending}}"
+          adjust-position="false"
+          focus="{{inputFocus}}"
+        ></textarea>
+        <button
+          class="send-btn {{sending ? 'sending' : ''}}"
+          bindtap="onSendMessage"
+          disabled="{{!inputMessage.trim() || !currentAreaId || sending}}"
+        >
+          <text wx:if="{{!sending}}">发送</text>
+          <text wx:else>⏳</text>
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 创建/编辑领域模态 -->
+  <view class="modal-mask {{showAreaModal ? 'show' : ''}}" bindtap="closeAreaModal">
+    <view class="modal-content" catchtap="stopPropagation">
+      <text class="modal-title">{{editingArea ? '编辑领域' : '创建新领域'}}</text>
+      <view class="form-item">
+        <view class="form-label">领域名称</view>
+        <input class="form-input" placeholder="输入领域名称" value="{{areaFormName}}" bindinput="onAreaNameInput" />
+      </view>
+      <view class="form-item">
+        <view class="form-label">描述</view>
+        <textarea class="form-textarea" placeholder="输入领域描述" value="{{areaFormDesc}}" bindinput="onAreaDescInput" maxlength="500"></textarea>
+      </view>
+      <text class="form-hint" wx:if="!editingArea">将创建在「{{parentAreaName}}」之下</text>
+      <view class="modal-btns">
+        <button class="modal-btn cancel" bindtap="closeAreaModal">取消</button>
+        <button class="modal-btn confirm" bindtap="onSaveArea">保存</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 领域操作菜单弹窗 -->
+  <view class="modal-mask {{showActionMenu ? 'show' : ''}}" bindtap="closeActionMenu">
+    <view class="action-menu" catchtap="stopPropagation">
+      <view class="action-item" bindtap="onEditArea">
+        <text>✏️ 编辑领域</text>
+      </view>
+      <view class="action-item" bindtap="onAddChildArea">
+        <text>➕ 添加子领域</text>
+      </view>
+      <view class="action-item" bindtap="onExamineArea">
+        <text>🔍 审查子领域</text>
+      </view>
+      <view class="action-item" bindtap="onGenerateSubareas">
+        <text>🤖 生成子领域建议</text>
+      </view>
+      <view class="action-item danger" bindtap="onDeleteArea">
+        <text>🗑️ 删除领域</text>
+      </view>
+      <view class="action-item cancel-action" bindtap="closeActionMenu">
+        <text>取消</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- RAG 搜索模态 -->
+  <view class="modal-mask {{showSearchModal ? 'show' : ''}}" bindtap="closeSearchModal">
+    <view class="modal-content" catchtap="stopPropagation">
+      <text class="modal-title">🔍 搜索笔记</text>
+      <input class="form-input" placeholder="输入搜索关键词" value="{{searchQuery}}" bindinput="onSearchQueryInput" />
+      <view class="search-results" wx:if="{{searchResults.length > 0}}">
+        <view wx:for="{{searchResults}}" wx:for-item="item" wx:key="item.id" class="search-item">
+          <text class="search-item-content">{{item.content}}</text>
+          <text class="search-item-score">相关度: {{item.score}}</text>
+        </view>
+      </view>
+      <view class="modal-btns">
+        <button class="modal-btn confirm" bindtap="onDoSearch">搜索</button>
+        <button class="modal-btn cancel" bindtap="closeSearchModal">关闭</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 审查子领域面板 -->
+  <view class="modal-mask {{showExaminePanel ? 'show' : ''}}" bindtap="closeExaminePanel">
+    <view class="modal-content full" catchtap="stopPropagation">
+      <text class="modal-title">🔍 审查子领域</text>
+      <scroll-view class="examine-content" scroll-y>
+        <text wx:if="{{!examineDone && !examineError}}">正在审查中...</text>
+        <rich-text nodes="{{examineResult}}" wx:if="{{examineResult}}"></rich-text>
+        <text wx:if="{{examineError}}" style="color:var(--danger-color)">{{examineError}}</text>
+      </scroll-view>
+      <view class="modal-btns">
+        <button class="modal-btn cancel" bindtap="closeExaminePanel">关闭</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 生成子领域面板 -->
+  <view class="modal-mask {{showGeneratePanel ? 'show' : ''}}" bindtap="closeGeneratePanel">
+    <view class="modal-content full" catchtap="stopPropagation">
+      <text class="modal-title">🤖 生成子领域建议</text>
+      <scroll-view class="generate-content" scroll-y>
+        <view wx:if="generateSubareas.length === 0 && !generateDone && !generateError">
+          <view class="loading-spinner"></view>
+          <text>正在生成子领域建议...</text>
+        </view>
+        <view wx:for="{{generateSubareas}}" wx:for-item="item" wx:key="item.index" class="subarea-item">
+          <input class="form-input" value="{{item.name}}" data-index="{{item.index}}" bindinput="onSubareaNameEdit" />
+          <input class="form-input subarea-desc" value="{{item.description}}" data-index="{{item.index}}" bindinput="onSubareaDescEdit" />
+        </view>
+        <text wx:if="{{generateError}}" style="color:var(--danger-color)">{{generateError}}</text>
+      </scroll-view>
+      <view class="modal-btns">
+        <button class="modal-btn" wx:if="{{generateDone && generateSubareas.length > 0}}" bindtap="onPolishSubareas">润色</button>
+        <button class="modal-btn confirm" wx:if="{{generateDone && generateSubareas.length > 0}}" bindtap="onCreateSubareas">批量创建</button>
+        <button class="modal-btn cancel" bindtap="closeGeneratePanel">关闭</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 技能选择弹窗 -->
+  <view class="modal-mask {{showSkillPicker ? 'show' : ''}}" bindtap="closeSkillPicker">
+    <view class="modal-content" catchtap="stopPropagation">
+      <text class="modal-title">选择技能</text>
+      <scroll-view class="skill-list" scroll-y>
+        <view class="skill-item {{!selectedSkillId ? 'active' : ''}}" bindtap="selectSkill" data-id="" data-name="默认技能">
+          <text>默认技能</text>
+        </view>
+        <view wx:for="{{skills}}" wx:for-item="skill" wx:key="skill.id" class="skill-item {{selectedSkillId === skill.id ? 'active' : ''}}" bindtap="selectSkill" data-id="{{skill.id}}" data-name="{{skill.name}}">
+          <text class="skill-name">{{skill.name}}</text>
+          <text class="skill-desc" wx:if="{{skill.description}}">{{skill.description}}</text>
+        </view>
+      </scroll-view>
+      <view class="modal-btns">
+        <button class="modal-btn cancel" bindtap="closeSkillPicker">关闭</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部导航 -->
+  <view class="bottom-nav">
+    <view class="nav-item" bindtap="goHome">
+      <text class="nav-icon">🏠</text>
+      <text>首页</text>
+    </view>
+    <view class="nav-item active">
+      <text class="nav-icon">🌲</text>
+      <text>领域</text>
+    </view>
+    <view class="nav-item" bindtap="goToNotes">
+      <text class="nav-icon">📝</text>
+      <text>笔记</text>
+    </view>
+    <view class="nav-item" bindtap="goToPlan">
+      <text class="nav-icon">🚀</text>
+      <text>计划</text>
+    </view>
+    <view class="nav-item" bindtap="goToSkills">
+      <text class="nav-icon">🔧</text>
+      <text>技能</text>
+    </view>
+  </view>
+</view>

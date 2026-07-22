@@ -1,0 +1,94 @@
+<!-- 登录注册页面 -->
+<view class="login-page">
+  <!-- 背景装饰 -->
+  <view class="login-bg">
+    <view class="bg-circle bg-circle-1"></view>
+    <view class="bg-circle bg-circle-2"></view>
+    <view class="bg-circle bg-circle-3"></view>
+  </view>
+
+  <view class="login-container">
+    <!-- 品牌区域 -->
+    <view class="brand-section">
+      <view class="brand-logo">
+        <image src="/images/logo_180.png" mode="aspectFit" class="brand-logo-img"></image>
+      </view>
+      <text class="brand-title">探知</text>
+      <text class="brand-subtitle">AI 辅助深度学习平台</text>
+    </view>
+
+    <!-- 登录/注册卡片 -->
+    <view class="login-card">
+      <!-- Tab 切换 -->
+      <view class="login-tabs">
+        <view class="tab-item {{isLogin ? 'active' : ''}}" bindtap="switchToLogin">登录</view>
+        <view class="tab-item {{!isLogin ? 'active' : ''}}" bindtap="switchToRegister">注册</view>
+      </view>
+
+      <!-- 表单 -->
+      <view class="login-form">
+        <view class="form-item">
+          <view class="form-label">用户名</view>
+          <input
+            class="form-input"
+            type="text"
+            placeholder="请输入用户名"
+            value="{{username}}"
+            bindinput="onUsernameInput"
+            maxlength="50"
+          />
+        </view>
+        <view class="form-item">
+          <view class="form-label">密码</view>
+          <input
+            class="form-input"
+            type="password"
+            placeholder="请输入密码"
+            value="{{password}}"
+            bindinput="onPasswordInput"
+            maxlength="100"
+          />
+        </view>
+        <view class="form-item" wx:if="{{!isLogin}}">
+          <view class="form-label">确认密码</view>
+          <input
+            class="form-input"
+            type="password"
+            placeholder="请再次输入密码"
+            value="{{confirmPassword}}"
+            bindinput="onConfirmPasswordInput"
+            maxlength="100"
+          />
+        </view>
+      </view>
+
+      <!-- 错误提示 -->
+      <view class="error-msg" wx:if="{{errorMsg}}">
+        <text>{{errorMsg}}</text>
+      </view>
+
+      <!-- 提交按钮 -->
+      <button class="submit-btn" bindtap="onSubmit" loading="{{submitting}}" disabled="{{submitting}}">
+        {{isLogin ? '登 录' : '注 册'}}
+      </button>
+
+      <!-- 服务器地址配置 -->
+      <view class="server-config" bindtap="showServerConfig">
+        <text class="config-link">服务器配置</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 服务器配置弹窗 -->
+  <view class="modal-mask {{showConfig ? 'show' : ''}}" catchtouchmove="preventMove" bindtap="hideServerConfig">
+    <view class="config-modal" catchtap="stopPropagation">
+      <text class="config-title">服务器配置</text>
+      <input class="form-input" placeholder="服务器地址" value="{{serverUrl}}" bindinput="onServerUrlInput" />
+      <text class="config-tip">例如: http://192.168.1.100:8000</text>
+      <view class="config-btns">
+        <button class="btn-cancel" bindtap="hideServerConfig">取消</button>
+        <button class="btn-confirm" bindtap="onSaveServerConfig">保存</button>
+      </view>
+    </view>
+  </view>
+</view>

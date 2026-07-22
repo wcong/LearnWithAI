@@ -1,8 +1,7 @@
 """数据模型"""
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, LargeBinary
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy import Column, Integer, String, Text, DateTime, LargeBinary
 
 from app.database import Base
 
@@ -15,11 +14,6 @@ class User(Base):
     password_hash = Column(String(256), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    areas = relationship("Area", back_populates="user", cascade="all, delete-orphan")
-    logins = relationship("LoginHistory", back_populates="user",
-                          order_by="LoginHistory.login_at.desc()",
-                          cascade="all, delete-orphan")
-
     def to_dict(self) -> dict:
         return {"id": self.id, "username": self.username,
                 "created_at": self.created_at.isoformat() if self.created_at else None}
@@ -29,24 +23,13 @@ class Area(Base):
     __tablename__ = "areas"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    user_id = Column(Integer, nullable=False, index=True)
     name = Column(String(200), nullable=False, index=True)
     description = Column(Text, default="")
-    parent_id = Column(Integer, ForeignKey("areas.id"), nullable=True)
+    parent_id = Column(Integer, nullable=True)
     order = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    # 用户
-    user = relationship("User", back_populates="areas")
-
-    # 树关系（自引用：remote_side 放在 parent 侧）
-    parent = relationship("Area", remote_side=[id],
-                          backref=backref("children", order_by="Area.order"))
-    chat_messages = relationship("ChatMessage", back_populates="area",
-                                 cascade="all, delete-orphan")
-    sessions = relationship("LearningSession", back_populates="area",
-                            cascade="all, delete-orphan")
 
     def to_dict(self) -> dict:
         return {
@@ -58,23 +41,15 @@ class Area(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
-    def to_tree(self) -> dict:
-        """返回节点及其子节点构成的树"""
-        node = self.to_dict()
-        node["children"] = [c.to_tree() for c in self.children]
-        return node
-
 
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    area_id = Column(Integer, ForeignKey("areas.id"), nullable=False, index=True)
+    area_id = Column(Integer, nullable=False, index=True)
     role = Column(String(20), nullable=False)  # user / assistant
     content = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
-
-    area = relationship("Area", back_populates="chat_messages")
 
     def to_dict(self) -> dict:
         return {
@@ -91,11 +66,9 @@ class AreaNote(Base):
     __tablename__ = "area_notes"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    area_id = Column(Integer, ForeignKey("areas.id"), nullable=False, unique=True, index=True)
+    area_id = Column(Integer, nullable=False, unique=True, index=True)
     content = Column(Text, default="")  # HTML 格式
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    area = relationship("Area", backref=backref("note", uselist=False, cascade="all, delete-orphan"))
 
     def to_dict(self) -> dict:
         return {
@@ -111,12 +84,10 @@ class NoteEmbedding(Base):
     __tablename__ = "note_embeddings"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    area_id = Column(Integer, ForeignKey("areas.id"), nullable=False, index=True)
+    area_id = Column(Integer, nullable=False, index=True)
     chunk_text = Column(Text, nullable=False)
     embedding = Column(LargeBinary, nullable=True)  # numpy float32 序列化
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    area = relationship("Area")
 
     def to_dict(self) -> dict:
         return {
@@ -131,11 +102,9 @@ class LearningSession(Base):
     __tablename__ = "learning_sessions"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    area_id = Column(Integer, ForeignKey("areas.id"), nullable=False, index=True)
+    area_id = Column(Integer, nullable=False, index=True)
     summary = Column(Text, default="")
     created_at = Column(DateTime, default=datetime.utcnow)
-
-    area = relationship("Area", back_populates="sessions")
 
     def to_dict(self) -> dict:
         return {
@@ -151,8 +120,8 @@ class UsageLog(Base):
     __tablename__ = "usage_logs"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    area_id = Column(Integer, ForeignKey("areas.id"), nullable=False, index=True)
-    message_id = Column(Integer, ForeignKey("chat_messages.id"), nullable=True)
+    area_id = Column(Integer, nullable=False, index=True)
+    message_id = Column(Integer, nullable=True)
     model = Column(String(100), default="")
     provider = Column(String(50), default="")
     prompt_tokens = Column(Integer, default=0)
@@ -160,8 +129,6 @@ class UsageLog(Base):
     total_tokens = Column(Integer, default=0)
     duration_ms = Column(Integer, default=0)  # 请求耗时
     created_at = Column(DateTime, default=datetime.utcnow)
-
-    area = relationship("Area")
 
     def to_dict(self) -> dict:
         return {
@@ -183,15 +150,11 @@ class AreaAnalysis(Base):
     __tablename__ = "area_analyses"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    area_id = Column(Integer, ForeignKey("areas.id"), nullable=False, index=True)
+    area_id = Column(Integer, nullable=False, index=True)
     summary = Column(Text, default="")
     sub_area_summaries = Column(Text, default="")  # JSON: [{name, summary}]
     missing_suggestions = Column(Text, default="")  # JSON: [{name, reason}]
     created_at = Column(DateTime, default=datetime.utcnow)
-
-    area = relationship("Area", backref=backref("analyses",
-                                                 order_by="AreaAnalysis.created_at.desc()",
-                                                 cascade="all, delete-orphan"))
 
     def to_dict(self) -> dict:
         import json
@@ -215,8 +178,8 @@ class Skill(Base):
     prompt_template = Column(Text, nullable=False)  # 提示词模板，用 {topic} 占位用户输入
     is_global = Column(Integer, default=0)           # 1=全局技能（管理员创建）
     is_default = Column(Integer, default=0)          # 1=系统内置默认技能（不可删除）
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # 私人技能的所属用户
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)  # 创建者
+    user_id = Column(Integer, nullable=True)  # 私人技能的所属用户
+    created_by = Column(Integer, nullable=True)  # 创建者
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -235,20 +198,36 @@ class Skill(Base):
         }
 
 
+class SystemConfig(Base):
+    """系统运行时配置（键值对）"""
+    __tablename__ = "system_config"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    key = Column(String(100), unique=True, nullable=False, index=True)
+    value = Column(Text, nullable=False, default="")
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "key": self.key,
+            "value": self.value,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
 class LoginHistory(Base):
     """用户登录历史记录"""
     __tablename__ = "login_history"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    user_id = Column(Integer, nullable=False, index=True)
     login_at = Column(DateTime, default=datetime.utcnow, index=True)
     ip_address_masked = Column(String(50), default="")
     location = Column(Text, default="")           # JSON: country, regionName, city, lat, lon, isp
     user_agent = Column(String(500), default="")
     success = Column(Integer, default=1)          # 1=成功  0=失败
     failure_reason = Column(String(200), default="")
-
-    user = relationship("User", back_populates="logins")
 
     def to_dict(self) -> dict:
         import json

@@ -19,6 +19,50 @@ class TestChat:
         )
         assert resp.status_code == 404
 
+    def test_chat_token_limit_exceeded(
+        self, test_client, auth_headers, test_user, test_area, db_session
+    ):
+        """超出每日 token 限额时返回 429"""
+        from app.models import SystemConfig, UsageLog
+        from app.agents.learning_agent import LearningAgent
+
+        # 更新限额为较小的值（而非插入，避免与 init_db 默认值冲突）
+        for key, val in [("daily_token_input_limit", "50"), ("daily_token_output_limit", "50")]:
+            cfg = db_session.query(SystemConfig).filter(SystemConfig.key == key).first()
+            if cfg:
+                cfg.value = val
+            else:
+                db_session.add(SystemConfig(key=key, value=val))
+        db_session.commit()
+
+        log = UsageLog(
+            area_id=test_area.id,
+            prompt_tokens=100,
+            completion_tokens=100,
+            total_tokens=200,
+        )
+        db_session.add(log)
+        db_session.commit()
+
+        async def mock_ask(self, message):
+            return ("不应该被调用", {})
+
+        setattr(LearningAgent, "ask", mock_ask)
+        try:
+            resp = test_client.post(
+                "/api/chat",
+                headers=auth_headers,
+                json={"area_id": test_area.id, "message": "测试"},
+            )
+            assert resp.status_code == 429, resp.text
+            data = resp.json()
+            detail = data["detail"]
+            assert "免费 Token 额度已用尽" in detail["message"]
+            assert detail["used_prompt"] == 100
+            assert detail["limit_prompt"] == 50
+        finally:
+            delattr(LearningAgent, "ask")
+
     def test_chat_success(self, test_client, auth_headers, test_area):
         """正常聊天返回 AI 回复"""
         from app.agents.learning_agent import LearningAgent
@@ -91,6 +135,44 @@ class TestChat:
 
 
 class TestChatStream:
+    def test_chat_stream_token_limit_exceeded(
+        self, test_client, auth_headers, test_user, test_area, db_session
+    ):
+        """流式聊天超出限额也返回 429"""
+        from app.models import SystemConfig, UsageLog
+        from app.agents.learning_agent import LearningAgent
+
+        for key, val in [("daily_token_input_limit", "10"), ("daily_token_output_limit", "10")]:
+            cfg = db_session.query(SystemConfig).filter(SystemConfig.key == key).first()
+            if cfg:
+                cfg.value = val
+            else:
+                db_session.add(SystemConfig(key=key, value=val))
+        db_session.commit()
+
+        log = UsageLog(
+            area_id=test_area.id,
+            prompt_tokens=100,
+            completion_tokens=100,
+            total_tokens=200,
+        )
+        db_session.add(log)
+        db_session.commit()
+
+        async def mock_chat_stream(self, message, callback_handler=None):
+            return ("不应被调用", {})
+
+        setattr(LearningAgent, "chat_stream", mock_chat_stream)
+        try:
+            resp = test_client.post(
+                "/api/chat/stream",
+                headers=auth_headers,
+                json={"area_id": test_area.id, "message": "测试"},
+            )
+            assert resp.status_code == 429, resp.text
+        finally:
+            delattr(LearningAgent, "chat_stream")
+
     def test_chat_stream_success(self, test_client, auth_headers, test_area):
         """流式聊天返回 SSE 事件流"""
         from app.agents.learning_agent import LearningAgent

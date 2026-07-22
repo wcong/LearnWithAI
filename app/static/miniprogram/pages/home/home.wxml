@@ -1,0 +1,76 @@
+<!-- 首页导航页面 -->
+<view class="home-page">
+  <!-- 顶部品牌区 -->
+  <view class="home-header">
+    <view class="header-bg"></view>
+    <view class="header-content">
+      <view class="header-top">
+        <image src="/images/logo_180.png" mode="aspectFit" class="brand-icon-img"></image>
+        <text class="brand-name">探知</text>
+      </view>
+      <view class="user-greeting" wx:if="{{username}}">
+        <text class="greeting-text">欢迎回来，</text>
+        <text class="username-text">{{username}}</text>
+      </view>
+      <view class="user-greeting" wx:else>
+        <text class="greeting-text">探索知识的无限可能</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 导航卡片网格 -->
+  <view class="nav-grid">
+    <view class="nav-card" data-page="domain" bindtap="navigateTo">
+      <view class="card-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">🌲</view>
+      <text class="card-title">学习领域</text>
+      <text class="card-desc">创建和管理知识树，与 AI 对话学习</text>
+    </view>
+
+    <view class="nav-card" data-page="notes" bindtap="navigateTo">
+      <view class="card-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c);">📝</view>
+      <text class="card-title">学习笔记</text>
+      <text class="card-desc">记录和管理学习笔记</text>
+    </view>
+
+    <view class="nav-card" data-page="skills" bindtap="navigateTo">
+      <view class="card-icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">🔧</view>
+      <text class="card-title">技能管理</text>
+      <text class="card-desc">管理 AI 技能模板</text>
+    </view>
+
+    <view class="nav-card" data-page="plan" bindtap="navigateTo">
+      <view class="card-icon" style="background: linear-gradient(135deg, #fa709a, #fee140);">🚀</view>
+      <text class="card-title">学习计划</text>
+      <text class="card-desc">AI 自动探索并规划学习路径</text>
+    </view>
+  </view>
+
+  <!-- 底部信息 -->
+  <view class="home-footer">
+    <text class="footer-text">探知 v1.0</text>
+  </view>
+
+  <!-- 底部导航 -->
+  <view class="bottom-nav">
+    <view class="nav-item active">
+      <text class="nav-icon">🏠</text>
+      <text>首页</text>
+    </view>
+    <view class="nav-item" bindtap="goToDomain">
+      <text class="nav-icon">🌲</text>
+      <text>领域</text>
+    </view>
+    <view class="nav-item" bindtap="goToNotes">
+      <text class="nav-icon">📝</text>
+      <text>笔记</text>
+    </view>
+    <view class="nav-item" bindtap="goToPlan">
+      <text class="nav-icon">🚀</text>
+      <text>计划</text>
+    </view>
+    <view class="nav-item" bindtap="goToSkills">
+      <text class="nav-icon">🔧</text>
+      <text>技能</text>
+    </view>
+  </view>
+</view>

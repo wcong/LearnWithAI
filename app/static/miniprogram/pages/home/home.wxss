@@ -1,0 +1,126 @@
+/* 首页导航页面样式 */
+.home-page {
+  min-height: 100vh;
+  background: var(--bg-color);
+  padding-bottom: 36px;
+}
+
+/* 顶部品牌区 */
+.home-header {
+  position: relative;
+  padding: 0 0 30px 0;
+  overflow: hidden;
+}
+
+.header-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #5b4fcf 100%);
+  border-radius: 0 0 32px 32px;
+}
+
+.header-content {
+  position: relative;
+  padding: 60px 24px 0;
+  z-index: 1;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.brand-icon-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+}
+
+.brand-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.user-greeting {
+  margin-top: 4px;
+}
+
+.greeting-text {
+  font-size: 15px;
+  color: rgba(255,255,255,0.85);
+}
+
+.username-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* 导航卡片网格 */
+.nav-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 16px;
+  margin-top: -16px;
+  position: relative;
+  z-index: 2;
+}
+
+.nav-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.nav-card:active {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.card-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  margin-bottom: 12px;
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.card-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* 底部信息 */
+.home-footer {
+  text-align: center;
+  padding: 30px 16px;
+}
+
+.footer-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+}

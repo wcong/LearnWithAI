@@ -169,6 +169,7 @@ function bootApp() {
             document.querySelectorAll('#mModalAdmin .m-admin-tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             if (tab.dataset.tab === 'stats') loadAdminStats();
+            else if (tab.dataset.tab === 'tokens') loadAdminTokenPanel();
         });
     });
 
@@ -897,6 +898,101 @@ function renderAdminStats(data, content) {
     }
     content.innerHTML = html;
 }
+
+// —— Admin Token 限额管理面板（移动端）——
+async function loadAdminTokenPanel() {
+    const content = document.getElementById('mAdminContent');
+    content.innerHTML = '<div class="m-admin-loading">加载中...</div>';
+    try {
+        const [usageData, config] = await Promise.all([
+            api('/admin/daily-usage'),
+            api('/admin/config'),
+        ]);
+        renderTokenPanel(content, usageData, config);
+    } catch (err) {
+        content.innerHTML = `<div style="text-align:center;color:#ef4444;padding:20px 0;">⚠️ 加载失败：${escHtml(err.message)}</div>`;
+    }
+}
+
+function renderTokenPanel(content, usageData, config) {
+    const today = new Date().toISOString().slice(0, 10);
+    const inputLimit = config.daily_token_input_limit || '200000';
+    const outputLimit = config.daily_token_output_limit || '200000';
+
+    let html = `
+        <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <label style="font-size:12px;color:var(--text-muted);">📅 日期</label>
+            <input type="date" id="mTokenDatePicker" value="${today}" style="flex:1;padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px;max-width:160px;">
+            <button id="mBtnQueryDailyUsage" style="padding:4px 12px;background:#409eff;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;">查询</button>
+        </div>
+        <div style="margin-bottom:14px;padding:12px;background:#f0f9ff;border-radius:8px;border:1px solid #b3d8ff;">
+            <div style="font-size:12px;font-weight:600;color:#409eff;margin-bottom:8px;">⚙️ 限额配置</div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                <label style="font-size:11px;color:var(--text-muted);">输入
+                    <input type="number" id="mCfgInputLimit" value="${escHtml(inputLimit)}"
+                           style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;margin-left:4px;">
+                </label>
+                <label style="font-size:11px;color:var(--text-muted);">输出
+                    <input type="number" id="mCfgOutputLimit" value="${escHtml(outputLimit)}"
+                           style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;margin-left:4px;">
+                </label>
+                <button id="mBtnSaveTokenConfig" style="padding:4px 12px;background:#67c23a;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;">保存</button>
+                <span id="mConfigSaveTip" style="font-size:11px;color:#67c23a;display:none;">✅ 已保存</span>
+            </div>
+        </div>
+        <div style="font-size:13px;font-weight:600;color:var(--text-color);margin-bottom:6px;">
+            📊 用量（${escHtml(usageData.date)}）
+        </div>
+    `;
+
+    const users = usageData.users || [];
+    if (users.length === 0) {
+        html += '<div style="text-align:center;color:var(--text-muted);padding:20px 0;font-size:13px;">暂无数据</div>';
+    } else {
+        html += '<table class="m-admin-table"><thead><tr>' +
+            '<th>用户</th><th>输入</th><th>输出</th><th>总计</th>' +
+            '</tr></thead><tbody>';
+        users.forEach(u => {
+            html += `<tr>
+                <td><strong>${escHtml(u.username)}</strong></td>
+                <td>${(u.prompt_tokens || 0).toLocaleString()}</td>
+                <td>${(u.completion_tokens || 0).toLocaleString()}</td>
+                <td><strong>${(u.total_tokens || 0).toLocaleString()}</strong></td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+    }
+
+    content.innerHTML = html;
+
+    document.getElementById('mBtnQueryDailyUsage').addEventListener('click', async () => {
+        const date = document.getElementById('mTokenDatePicker').value;
+        try {
+            const data = await api('/admin/daily-usage?date=' + date);
+            const configRsp = await api('/admin/config');
+            renderTokenPanel(content, data, configRsp);
+        } catch (err) {
+            content.innerHTML = `<div style="text-align:center;color:#ef4444;padding:20px 0;">⚠️ 查询失败：${escHtml(err.message)}</div>`;
+        }
+    });
+
+    document.getElementById('mBtnSaveTokenConfig').addEventListener('click', async () => {
+        const inputVal = document.getElementById('mCfgInputLimit').value.trim();
+        const outputVal = document.getElementById('mCfgOutputLimit').value.trim();
+        const tip = document.getElementById('mConfigSaveTip');
+        try {
+            await api('/admin/config', {
+                method: 'PUT',
+                body: { daily_token_input_limit: inputVal, daily_token_output_limit: outputVal },
+            });
+            tip.style.display = 'inline';
+            setTimeout(() => { tip.style.display = 'none'; }, 3000);
+        } catch (err) {
+            alert('保存失败：' + err.message);
+        }
+    });
+}
+
 
 // ============================================================
 //  Examine Subareas

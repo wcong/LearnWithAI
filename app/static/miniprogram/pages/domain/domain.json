@@ -1,0 +1,11 @@
+{
+  "usingComponents": {
+    "area-tree": "/components/area-tree/area-tree",
+    "thinking-panel": "/components/thinking-panel/thinking-panel",
+    "mp-half-screen-dialog": "weui-miniprogram/half-screen-dialog/half-screen-dialog",
+    "mp-dialog": "weui-miniprogram/dialog/dialog",
+    "mp-cells": "weui-miniprogram/cells/cells",
+    "mp-cell": "weui-miniprogram/cell/cell"
+  },
+  "navigationStyle": "custom"
+}

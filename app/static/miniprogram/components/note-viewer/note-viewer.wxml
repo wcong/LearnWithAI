@@ -1,0 +1,40 @@
+<!-- 笔记查看/编辑器组件 -->
+<view class="note-viewer">
+  <!-- 工具栏 -->
+  <view class="note-toolbar">
+    <view class="note-tool-left">
+      <text class="note-area-name" wx:if="{{areaName}}">{{areaName}} 笔记</text>
+      <text class="note-area-name" wx:else>笔记</text>
+    </view>
+    <view class="note-tool-right">
+      <button class="tool-btn {{editing ? 'active' : ''}}" bindtap="onToggleEdit" size="mini">
+        {{editing ? '预览' : '编辑'}}
+      </button>
+      <button class="tool-btn save-btn" wx:if="{{editing}}" bindtap="onSave" size="mini" disabled="{{!hasChange}}">
+        保存
+      </button>
+    </view>
+  </view>
+
+  <!-- 查看模式 -->
+  <view class="note-view-mode" wx:if="{{!editing}}">
+    <view class="note-content" wx:if="{{content}}">
+      <rich-text nodes="{{content}}" class="note-rich-text"></rich-text>
+    </view>
+    <view class="note-empty" wx:else>
+      <text class="empty-text">暂无笔记，点击编辑开始记录</text>
+    </view>
+  </view>
+
+  <!-- 编辑模式 -->
+  <view class="note-edit-mode" wx:else>
+    <textarea
+      class="note-textarea"
+      value="{{editContent}}"
+      bindinput="onContentInput"
+      placeholder="在此输入笔记内容（支持 HTML 格式）..."
+      auto-height
+      maxlength="50000"
+    ></textarea>
+  </view>
+</view>

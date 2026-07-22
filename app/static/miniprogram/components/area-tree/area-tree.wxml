@@ -1,0 +1,28 @@
+<!-- 领域树组件 - 递归渲染无限层级 -->
+<view class="area-tree">
+  <view wx:for="{{treeData}}" wx:for-item="node" wx:key="node.id" class="tree-node-wrapper">
+    <view
+      class="tree-node {{node.selected ? 'selected' : ''}} {{node.id === currentId ? 'active' : ''}}"
+      style="padding-left: {{depth * 20 + 12}}px"
+      data-id="{{node.id}}"
+      bindtap="onTapNode"
+      bindlongpress="onLongPress"
+    >
+      <view class="tree-toggle {{node.children && node.children.length > 0 ? 'visible' : 'invisible'}}">
+        <text class="toggle-icon {{node.expanded ? 'expanded' : ''}}">▶</text>
+      </view>
+      <text class="node-icon">{{node.children && node.children.length > 0 ? '📂' : '📄'}}</text>
+      <text class="node-name">{{node.name}}</text>
+      <text wx:if="{{node.children && node.children.length > 0}}" class="node-count">{{node.children.length}}</text>
+    </view>
+    <view wx:if="{{node.expanded && node.children && node.children.length > 0}}" class="children-container">
+      <area-tree
+        treeData="{{node.children}}"
+        depth="{{depth + 1}}"
+        currentId="{{currentId}}"
+        bind:nodeTap="onChildNodeTap"
+        bind:nodeLongPress="onChildNodeLongPress"
+      />
+    </view>
+  </view>
+</view>

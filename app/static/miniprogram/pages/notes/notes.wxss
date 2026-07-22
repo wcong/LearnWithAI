@@ -1,0 +1,180 @@
+/* 笔记管理页面样式 */
+.notes-page {
+  min-height: 100vh;
+  background: var(--bg-color);
+  padding-bottom: 36px;
+  display: flex;
+  flex-direction: column;
+}
+
+.notes-header {
+  background: var(--primary-gradient);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 100;
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.save-header-btn {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 6px;
+  padding: 4px 12px;
+  line-height: 1.6;
+}
+
+.notes-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 工具栏 */
+.note-toolbar {
+  background: #fff;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.toolbar-tabs {
+  display: flex;
+  padding: 0 16px;
+}
+
+.tab-item {
+  padding: 10px 20px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  position: relative;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.tab-item.active {
+  color: var(--primary-start);
+  border-bottom-color: var(--primary-start);
+}
+
+/* 笔记容器 */
+.note-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 查看模式 */
+.note-view {
+  flex: 1;
+  padding: 16px;
+  line-height: 1.8;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.note-rich {
+  word-break: break-word;
+}
+
+.note-rich img {
+  max-width: 100%;
+  height: auto;
+}
+
+.note-rich pre {
+  background: #f5f5f5;
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 13px;
+}
+
+.note-rich code {
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+/* 编辑模式 */
+.note-edit {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+}
+
+.note-textarea {
+  flex: 1;
+  min-height: 300px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: #fff;
+  box-sizing: border-box;
+  resize: none;
+}
+
+.note-textarea:focus {
+  border-color: var(--primary-start);
+}
+
+.edit-actions {
+  padding: 12px 0;
+}
+
+.save-btn {
+  width: 100%;
+  height: 44px;
+  background: var(--primary-gradient);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 16px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.save-btn[disabled] {
+  opacity: 0.5;
+}
+
+/* 未选择提示 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  color: var(--text-secondary);
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.empty-text {
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.empty-hint {
+  font-size: 13px;
+  color: var(--info-color);
+}

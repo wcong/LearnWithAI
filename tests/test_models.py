@@ -16,6 +16,7 @@ from app.models import (
     AreaAnalysis,
     Skill,
     LoginHistory,
+    SystemConfig,
 )
 
 
@@ -67,7 +68,7 @@ class TestAreaModel:
         assert d["order"] == 1
 
     def test_area_tree(self, test_user, db_session):
-        """Area.to_tree() 返回树形结构"""
+        """Area 树形结构（手动查询）"""
         parent = Area(user_id=test_user.id, name="AI")
         db_session.add(parent)
         db_session.commit()
@@ -75,19 +76,23 @@ class TestAreaModel:
         db_session.add(child)
         db_session.commit()
 
-        tree = parent.to_tree()
+        tree = parent.to_dict()
+        children = db_session.query(Area).filter(Area.parent_id == parent.id).all()
+        tree["children"] = [c.to_dict() for c in children]
         assert tree["name"] == "AI"
         assert len(tree["children"]) == 1
         assert tree["children"][0]["name"] == "NLP"
 
     def test_cascade_delete(self, test_user, db_session):
-        """删除 User 时级联删除 Area"""
+        """手动删除 Area（无 FK 约束，需先删关联的 Area）"""
         user = test_user
         area = Area(user_id=user.id, name="待删除")
         db_session.add(area)
         db_session.commit()
         area_id = area.id
 
+        # 手动删除关联的 Area，再删 User
+        db_session.delete(area)
         db_session.delete(user)
         db_session.commit()
 
@@ -221,6 +226,45 @@ class TestSkillModel:
         assert d["user_id"] is None  # 全局技能无 user_id
 
 
+class TestSystemConfigModel:
+    def test_create_config(self, db_session):
+        """创建 SystemConfig"""
+        cfg = SystemConfig(key="daily_token_input_limit", value="200000")
+        db_session.add(cfg)
+        db_session.commit()
+        assert cfg.id is not None
+        assert cfg.key == "daily_token_input_limit"
+        assert cfg.value == "200000"
+
+    def test_unique_key(self, db_session):
+        """配置 key 必须唯一"""
+        db_session.add(SystemConfig(key="test_key", value="100"))
+        db_session.commit()
+        with pytest.raises(Exception):
+            db_session.add(SystemConfig(key="test_key", value="200"))
+            db_session.commit()
+
+    def test_to_dict(self, db_session):
+        """SystemConfig.to_dict()"""
+        cfg = SystemConfig(key="daily_token_output_limit", value="300000")
+        db_session.add(cfg)
+        db_session.commit()
+        d = cfg.to_dict()
+        assert d["key"] == "daily_token_output_limit"
+        assert d["value"] == "300000"
+        assert "updated_at" in d
+
+    def test_update_value(self, db_session):
+        """更新配置值"""
+        cfg = SystemConfig(key="daily_token_input_limit", value="200000")
+        db_session.add(cfg)
+        db_session.commit()
+        cfg.value = "150000"
+        db_session.commit()
+        db_session.refresh(cfg)
+        assert cfg.value == "150000"
+
+
 class TestLoginHistoryModel:
     def test_create_login_history(self, test_user, db_session):
         """创建 LoginHistory"""
@@ -237,7 +281,7 @@ class TestLoginHistoryModel:
         assert d["success"] is True
 
     def test_login_history_order(self, test_user, db_session):
-        """登录历史按时间倒序"""
+        """登录历史按时间倒序（手动查询）"""
         from datetime import datetime, timedelta
 
         h1 = LoginHistory(
@@ -250,8 +294,9 @@ class TestLoginHistoryModel:
         )
         db_session.add_all([h1, h2])
         db_session.commit()
-        # users 关系按 login_at.desc() 排序
-        user = db_session.query(User).get(test_user.id)
-        logins = user.logins
+        # 手动查询登录历史，按时间倒序
+        logins = db_session.query(LoginHistory).filter(
+            LoginHistory.user_id == test_user.id
+        ).order_by(LoginHistory.login_at.desc()).all()
         assert len(logins) == 2
         assert logins[0].id == h1.id  # 最新的在前

@@ -1,0 +1,99 @@
+<!-- 技能管理页面 -->
+<view class="skills-page">
+  <!-- 顶部导航 -->
+  <view class="skills-header" style="padding-top: {{statusBarHeight + 20}}px;">
+    <view class="header-left">
+      <text class="header-title">🔧 技能管理</text>
+    </view>
+    <view class="header-right">
+      <text class="header-btn add-header-btn" bindtap="onAddSkill">+ 新建</text>
+    </view>
+  </view>
+
+  <!-- 技能列表 -->
+  <scroll-view class="skill-list" scroll-y>
+    <view class="empty-state" wx:if="{{skills.length === 0 && !loading}}">
+      <text class="empty-icon">🔧</text>
+      <text class="empty-text">暂无技能模板</text>
+      <text class="empty-hint">点击右上角「新建」创建 AI 技能提示词模板</text>
+    </view>
+
+    <view wx:for="{{skills}}" wx:for-item="skill" wx:key="skill.id" class="skill-card">
+      <view class="skill-card-header">
+        <view class="skill-info">
+          <text class="skill-card-name">{{skill.name}}</text>
+          <text class="skill-card-tag" wx:if="{{skill.scope === 'global'}}">全局</text>
+          <text class="skill-card-tag personal" wx:if="{{skill.scope === 'personal'}}">个人</text>
+          <text class="skill-card-tag default" wx:if="{{skill.scope === 'default'}}">默认</text>
+        </view>
+        <view class="skill-card-actions">
+          <text class="action-icon" bindtap="onEditSkill" data-id="{{skill.id}}">✏️</text>
+          <text class="action-icon danger" bindtap="onDeleteSkill" data-id="{{skill.id}}" data-name="{{skill.name}}">🗑️</text>
+        </view>
+      </view>
+      <text class="skill-card-desc" wx:if="{{skill.description}}">{{skill.description}}</text>
+      <view class="skill-card-preview">
+        <text class="preview-label">提示词模板：</text>
+        <text class="preview-text">{{skill.template}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 悬浮添加按钮 -->
+  <view class="fab-btn" bindtap="onAddSkill">
+    <text class="fab-icon">+</text>
+  </view>
+
+  <!-- 创建/编辑弹窗 -->
+  <view class="modal-mask {{showSkillModal ? 'show' : ''}}" bindtap="closeSkillModal">
+    <view class="modal-content" catchtap="stopPropagation">
+      <text class="modal-title">{{editingSkillId ? '编辑技能' : '新建技能'}}</text>
+
+      <view class="form-item">
+        <view class="form-label">技能名称</view>
+        <input class="form-input" placeholder="输入技能名称" value="{{skillFormName}}" bindinput="onSkillFormName" />
+      </view>
+
+      <view class="form-item">
+        <view class="form-label">描述（可选）</view>
+        <input class="form-input" placeholder="简短描述该技能的用途" value="{{skillFormDesc}}" bindinput="onSkillFormDesc" />
+      </view>
+
+      <view class="form-item">
+        <view class="form-label">提示词模板</view>
+        <textarea class="form-textarea template-textarea" placeholder="输入 AI 提示词模板..." value="{{skillFormTemplate}}" bindinput="onSkillFormTemplate" maxlength="2000"></textarea>
+      </view>
+
+      <view class="modal-btns">
+        <button class="modal-btn cancel" bindtap="closeSkillModal">取消</button>
+        <button class="modal-btn confirm" bindtap="onSaveSkill" loading="{{savingSkill}}" disabled="{{savingSkill}}">
+          {{editingSkillId ? '更新' : '创建'}}
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部导航 -->
+  <view class="bottom-nav">
+    <view class="nav-item" bindtap="goHome">
+      <text class="nav-icon">🏠</text>
+      <text>首页</text>
+    </view>
+    <view class="nav-item" bindtap="goToDomain">
+      <text class="nav-icon">🌲</text>
+      <text>领域</text>
+    </view>
+    <view class="nav-item" bindtap="goToNotes">
+      <text class="nav-icon">📝</text>
+      <text>笔记</text>
+    </view>
+    <view class="nav-item" bindtap="goToPlan">
+      <text class="nav-icon">🚀</text>
+      <text>计划</text>
+    </view>
+    <view class="nav-item active">
+      <text class="nav-icon">🔧</text>
+      <text>技能</text>
+    </view>
+  </view>
+</view>

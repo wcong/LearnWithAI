@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "area-tree": "/components/area-tree/area-tree"
+  }
+}

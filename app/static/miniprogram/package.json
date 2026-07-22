@@ -1,0 +1,9 @@
+{
+  "name": "tanzhi-weapp",
+  "version": "1.0.0",
+  "description": "探知 微信小程序 - AI辅助深度学习",
+  "private": true,
+  "dependencies": {
+    "weui-miniprogram": "^1.2.8"
+  }
+}
