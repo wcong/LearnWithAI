@@ -1,20 +1,15 @@
 /**
- * 登录注册页面
+ * 微信小程序一键登录页面（移除用户名密码注册）
  */
 const auth = require('../../utils/auth')
 const api = require('../../utils/api')
-const { showToast, hideLoading } = require('../../utils/util')
+const { showToast } = require('../../utils/util')
 
 Page({
   data: {
-    isLogin: true,
-    username: '',
-    password: '',
-    confirmPassword: '',
-    errorMsg: '',
-    submitting: false,
+    loggingIn: false,
     showConfig: false,
-    serverUrl: 'http://localhost:8000'
+    serverUrl: 'http://localhost:8000',
   },
 
   onLoad() {
@@ -30,78 +25,43 @@ Page({
     }
   },
 
-  switchToLogin() {
-    this.setData({
-      isLogin: true,
-      errorMsg: ''
+  /** 微信一键登录 */
+  onWechatLogin() {
+    if (this.data.loggingIn) return
+    this.setData({ loggingIn: true })
+    wx.showLoading({ title: '登录中...', mask: true })
+
+    wx.login({
+      success: (res) => {
+        if (res.code) {
+          auth.wechatLogin(res.code)
+            .then(() => {
+              wx.hideLoading()
+              showToast('登录成功', 'success')
+              setTimeout(() => {
+                wx.redirectTo({ url: '/pages/home/home' })
+              }, 500)
+            })
+            .catch(err => {
+              wx.hideLoading()
+              this.setData({ loggingIn: false })
+              showToast(err.message || '登录失败，请重试')
+            })
+        } else {
+          wx.hideLoading()
+          this.setData({ loggingIn: false })
+          showToast('获取微信登录凭证失败')
+        }
+      },
+      fail: () => {
+        wx.hideLoading()
+        this.setData({ loggingIn: false })
+        showToast('微信登录失败，请检查网络')
+      }
     })
   },
 
-  switchToRegister() {
-    this.setData({
-      isLogin: false,
-      errorMsg: ''
-    })
-  },
-
-  onUsernameInput(e) {
-    this.setData({ username: e.detail.value, errorMsg: '' })
-  },
-
-  onPasswordInput(e) {
-    this.setData({ password: e.detail.value, errorMsg: '' })
-  },
-
-  onConfirmPasswordInput(e) {
-    this.setData({ confirmPassword: e.detail.value, errorMsg: '' })
-  },
-
-  onSubmit() {
-    const { isLogin, username, password, confirmPassword, submitting } = this.data
-    if (submitting) return
-
-    // 表单验证
-    if (!username.trim()) {
-      this.setData({ errorMsg: '请输入用户名' })
-      return
-    }
-    if (!password) {
-      this.setData({ errorMsg: '请输入密码' })
-      return
-    }
-    if (!isLogin && password !== confirmPassword) {
-      this.setData({ errorMsg: '两次密码输入不一致' })
-      return
-    }
-    if (!isLogin && password.length < 6) {
-      this.setData({ errorMsg: '密码长度至少 6 位' })
-      return
-    }
-
-    this.setData({ submitting: true, errorMsg: '' })
-    wx.showLoading({ title: isLogin ? '登录中...' : '注册中...', mask: true })
-
-    const promise = isLogin
-      ? auth.login(username, password)
-      : auth.register(username, password)
-
-    promise
-      .then(() => {
-        wx.hideLoading()
-        showToast(isLogin ? '登录成功' : '注册成功', 'success')
-        setTimeout(() => {
-          wx.redirectTo({ url: '/pages/home/home' })
-        }, 500)
-      })
-      .catch(err => {
-        wx.hideLoading()
-        this.setData({
-          submitting: false,
-          errorMsg: err.message || '操作失败，请重试'
-        })
-      })
-  },
-
+  /** 显示服务器配置 */
   showServerConfig() {
     this.setData({ showConfig: true })
   },

@@ -11,12 +11,20 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     username = Column(String(100), unique=True, nullable=False, index=True)
-    password_hash = Column(String(256), nullable=False)
+    password_hash = Column(String(256), nullable=True)  # 可为空（微信用户无密码）
+    email = Column(String(200), unique=True, nullable=True, index=True)
+    wechat_openid = Column(String(100), unique=True, nullable=True, index=True)
+    nickname = Column(String(100), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     def to_dict(self) -> dict:
-        return {"id": self.id, "username": self.username,
-                "created_at": self.created_at.isoformat() if self.created_at else None}
+        return {
+            "id": self.id,
+            "username": self.username,
+            "email": self.email,
+            "nickname": self.nickname,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
 
 
 class Area(Base):
@@ -214,6 +222,18 @@ class SystemConfig(Base):
             "value": self.value,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+
+class PasswordReset(Base):
+    """邮箱密码重置验证码"""
+    __tablename__ = "password_resets"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    email = Column(String(200), nullable=False, index=True)
+    code = Column(String(6), nullable=False)  # 6 位数字验证码
+    expires_at = Column(DateTime, nullable=False)
+    used = Column(Integer, default=0)  # 0=未使用 1=已使用
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 
 class LoginHistory(Base):

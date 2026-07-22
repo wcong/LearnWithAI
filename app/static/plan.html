@@ -169,14 +169,50 @@
             <button class="plan-auth-tab active" id="planTabLogin">登录</button>
             <button class="plan-auth-tab" id="planTabRegister">注册</button>
         </div>
+        <!-- 登录/注册表单 -->
         <form id="planAuthForm" onsubmit="return false;">
-            <label class="plan-auth-label">用户名</label>
-            <input type="text" class="plan-auth-input" id="planAuthUsername" placeholder="输入用户名" required autocomplete="username">
+            <label class="plan-auth-label">邮箱</label>
+            <input type="email" class="plan-auth-input" id="planAuthEmail" placeholder="输入邮箱" required autocomplete="email">
             <label class="plan-auth-label">密码</label>
             <input type="password" class="plan-auth-input" id="planAuthPassword" placeholder="输入密码" required autocomplete="current-password">
+            <div id="planAuthRegisterFields" style="display:none;">
+                <div id="planAuthRegStep1">
+                    <button type="submit" formnovalidate class="plan-auth-btn" id="planAuthRegSendBtn" style="margin-bottom:10px;">发送验证码</button>
+                </div>
+                <div id="planAuthRegStep2" style="display:none;">
+                    <label class="plan-auth-label">验证码</label>
+                    <input type="text" class="plan-auth-input" id="planAuthRegCode" placeholder="6 位数字验证码" maxlength="6">
+                    <label class="plan-auth-label">密码</label>
+                    <input type="password" class="plan-auth-input" id="planAuthRegPassword" placeholder="至少 4 个字符">
+                    <label class="plan-auth-label">确认密码</label>
+                    <input type="password" class="plan-auth-input" id="planAuthConfirmPassword" placeholder="再次输入密码">
+                    <label class="plan-auth-label">昵称（选填）</label>
+                    <input type="text" class="plan-auth-input" id="planAuthNickname" placeholder="显示名称">
+                </div>
+            </div>
             <p class="plan-auth-error" id="planAuthError"></p>
             <button type="submit" class="plan-auth-btn" id="planAuthBtn">登录</button>
+            <p class="plan-auth-forgot-link" id="planAuthForgotLink" style="margin-top:10px;text-align:center;font-size:12px;color:#909399;cursor:pointer;">忘记密码？</p>
         </form>
+        <!-- 忘记密码面板 -->
+        <div id="planAuthForgotPanel" style="display:none;">
+            <p style="text-align:center;font-size:14px;color:#606266;margin-bottom:16px;">重置密码</p>
+            <div id="planAuthForgotStep1">
+                <label class="plan-auth-label">邮箱</label>
+                <input type="email" class="plan-auth-input" id="planAuthForgotEmail" placeholder="输入注册邮箱">
+                <p class="plan-auth-error" id="planAuthForgotError"></p>
+                <button type="button" class="plan-auth-btn" id="planAuthForgotSendBtn">发送验证码</button>
+            </div>
+            <div id="planAuthForgotStep2" style="display:none;">
+                <label class="plan-auth-label">验证码</label>
+                <input type="text" class="plan-auth-input" id="planAuthForgotCode" placeholder="6 位数字验证码" maxlength="6">
+                <label class="plan-auth-label">新密码</label>
+                <input type="password" class="plan-auth-input" id="planAuthForgotNewPassword" placeholder="至少 4 个字符">
+                <p class="plan-auth-error" id="planAuthForgotResetError"></p>
+                <button type="button" class="plan-auth-btn" id="planAuthForgotResetBtn">重置密码</button>
+            </div>
+            <p class="plan-auth-forgot-link" id="planAuthForgotBack" style="margin-top:10px;text-align:center;font-size:12px;color:#409eff;cursor:pointer;">← 返回登录</p>
+        </div>
     </div>
 </div>
 

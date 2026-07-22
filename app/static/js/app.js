@@ -166,7 +166,7 @@ const appContainer = document.getElementById('appContainer');
 const tabLogin = document.getElementById('tabLogin');
 const tabRegister = document.getElementById('tabRegister');
 const authForm = document.getElementById('authForm');
-const authUsername = document.getElementById('authUsername');
+const authEmail = document.getElementById('authEmail');
 const authPassword = document.getElementById('authPassword');
 const authBtn = document.getElementById('authBtn');
 const authError = document.getElementById('authError');
@@ -174,12 +174,34 @@ const logoutBtn = document.getElementById('logoutBtn');
 
 let isLoginMode = true;
 
+function toggleAuthRegisterFields(show) {
+    const el = document.getElementById('authRegisterFields');
+    if (el) el.style.display = show ? '' : 'none';
+}
+
+function resetRegisterStep() {
+    const step1 = document.getElementById('authRegStep1');
+    const step2 = document.getElementById('authRegStep2');
+    if (step1) step1.style.display = '';
+    if (step2) step2.style.display = 'none';
+    const pw = document.getElementById('authPassword');
+    if (pw) pw.style.display = '';
+    document.getElementById('authEmail')?.removeAttribute('readonly');
+    // authBtn 的显示/隐藏由 tab 处理器控制
+}
+
 tabLogin.addEventListener('click', () => {
     isLoginMode = true;
     tabLogin.classList.add('active');
     tabRegister.classList.remove('active');
     authBtn.textContent = '登录';
+    authBtn.style.display = '';
     authError.textContent = '';
+    authError.style.color = '#ef4444';
+    toggleAuthRegisterFields(false);
+    const pw = document.getElementById('authPassword');
+    if (pw) pw.style.display = '';
+    document.getElementById('authEmail')?.removeAttribute('readonly');
 });
 
 tabRegister.addEventListener('click', () => {
@@ -187,28 +209,143 @@ tabRegister.addEventListener('click', () => {
     tabRegister.classList.add('active');
     tabLogin.classList.remove('active');
     authBtn.textContent = '注册';
+    authBtn.style.display = 'none';
     authError.textContent = '';
+    authError.style.color = '#ef4444';
+    toggleAuthRegisterFields(true);
+    resetRegisterStep();
+    const pw = document.getElementById('authPassword');
+    if (pw) pw.style.display = 'none';
 });
 
 authForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const username = authUsername.value.trim();
-    const password = authPassword.value.trim();
-    if (!username || !password) { authError.textContent = '请填写用户名和密码'; return; }
-    authBtn.disabled = true;
-    authBtn.textContent = '处理中...';
-    authError.textContent = '';
-    try {
-        const endpoint = isLoginMode ? '/auth/login' : '/auth/register';
-        const data = await api(endpoint, { method: 'POST', body: { username, password } });
-        token = data.token;
-        currentUser = { id: data.user_id, username: data.username };
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(currentUser));
-        showApp();
-    } catch (err) { authError.textContent = err.message; }
-    finally { authBtn.disabled = false; authBtn.textContent = isLoginMode ? '登录' : '注册'; }
+    const email = authEmail.value.trim();
+
+    if (isLoginMode) {
+        const password = authPassword.value.trim();
+        if (!email || !password) { authError.textContent = '请填写邮箱和密码'; return; }
+        authBtn.disabled = true;
+        authBtn.textContent = '处理中...';
+        authError.textContent = '';
+        try {
+            const data = await api('/auth/login', { method: 'POST', body: { email, password } });
+            token = data.token;
+            currentUser = { id: data.user_id, username: data.username };
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(currentUser));
+            showApp();
+        } catch (err) { authError.textContent = err.message; }
+        finally { authBtn.disabled = false; authBtn.textContent = '登录'; }
+    } else {
+        // 注册流程
+        const step2 = document.getElementById('authRegStep2');
+        if (!step2 || step2.style.display === 'none') {
+            // Step 1: 发送验证码
+            if (!email || email.indexOf('@') === -1) { authError.textContent = '请输入有效的邮箱'; return; }
+            const sendBtn = document.getElementById('authRegSendBtn');
+            if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = '发送中...'; }
+            authError.textContent = '';
+            authError.style.color = '#ef4444';
+            try {
+                await api('/auth/register-send-code', { method: 'POST', body: { email } });
+                document.getElementById('authRegStep1').style.display = 'none';
+                document.getElementById('authRegStep2').style.display = '';
+                authBtn.style.display = '';
+                document.getElementById('authPassword').style.display = 'none';
+                authEmail.setAttribute('readonly', 'readonly');
+                authError.textContent = '验证码已发送，请查收邮件';
+                authError.style.color = '#67c23a';
+            } catch (err) {
+                if (err.message.includes('已注册')) {
+                    tabLogin.click();
+                    authError.textContent = '该邮箱已注册，请直接登录';
+                } else {
+                    authError.textContent = err.message;
+                }
+            }
+            finally { if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = '发送验证码'; } }
+        } else {
+            // Step 2: 提交验证码 + 密码
+            const code = document.getElementById('authRegCode')?.value?.trim();
+            const password = document.getElementById('authRegPassword')?.value?.trim();
+            const confirmPw = document.getElementById('authConfirmPassword')?.value || '';
+            const nickname = document.getElementById('authNickname')?.value?.trim() || '';
+            if (!code || !password) { authError.textContent = '请填写验证码和密码'; return; }
+            if (password !== confirmPw) { authError.textContent = '两次输入的密码不一致'; return; }
+            if (password.length < 4) { authError.textContent = '密码至少 4 个字符'; return; }
+            authBtn.disabled = true;
+            authBtn.textContent = '注册中...';
+            authError.textContent = '';
+            authError.style.color = '#ef4444';
+            try {
+                const data = await api('/auth/register', { method: 'POST', body: { email, password, code, nickname } });
+                token = data.token;
+                currentUser = { id: data.user_id, username: data.username };
+                localStorage.setItem('token', token);
+                localStorage.setItem('user', JSON.stringify(currentUser));
+                showApp();
+            } catch (err) { authError.textContent = err.message; }
+            finally { authBtn.disabled = false; authBtn.textContent = '注册'; }
+        }
+    }
 });
+
+// 忘记密码 — 使用事件委托确保可靠
+authPage.addEventListener('click', (e) => {
+    const target = e.target;
+    if (target.id === 'authForgotLink') {
+        document.getElementById('authForm').style.display = 'none';
+        document.getElementById('authForgotPanel').style.display = '';
+        document.getElementById('authForgotError').textContent = '';
+        document.getElementById('authForgotResetError').textContent = '';
+        document.getElementById('authForgotStep2').style.display = 'none';
+        document.getElementById('authForgotStep1').style.display = '';
+    } else if (target.id === 'authForgotBack') {
+        document.getElementById('authForgotPanel').style.display = 'none';
+        document.getElementById('authForm').style.display = '';
+    } else if (target.id === 'authForgotSendBtn') {
+        handleForgotSend();
+    } else if (target.id === 'authForgotResetBtn') {
+        handleForgotReset();
+    }
+});
+
+async function handleForgotSend() {
+    const email = document.getElementById('authForgotEmail')?.value?.trim();
+    if (!email) { document.getElementById('authForgotError').textContent = '请输入邮箱'; return; }
+    const btn = document.getElementById('authForgotSendBtn');
+    btn.disabled = true;
+    btn.textContent = '发送中...';
+    document.getElementById('authForgotError').textContent = '';
+    try {
+        await api('/auth/forgot-password', { method: 'POST', body: { email } });
+        document.getElementById('authForgotStep1').style.display = 'none';
+        document.getElementById('authForgotStep2').style.display = '';
+    } catch (err) { document.getElementById('authForgotError').textContent = err.message; }
+    finally { btn.disabled = false; btn.textContent = '发送验证码'; }
+}
+
+async function handleForgotReset() {
+    const email = document.getElementById('authForgotEmail')?.value?.trim();
+    const code = document.getElementById('authForgotCode')?.value?.trim();
+    const newPassword = document.getElementById('authForgotNewPassword')?.value?.trim();
+    if (!code || !newPassword) { document.getElementById('authForgotResetError').textContent = '请填写验证码和新密码'; return; }
+    const btn = document.getElementById('authForgotResetBtn');
+    btn.disabled = true;
+    btn.textContent = '重置中...';
+    document.getElementById('authForgotResetError').textContent = '';
+    try {
+        await api('/auth/reset-password', { method: 'POST', body: { email, code, new_password: newPassword } });
+        document.getElementById('authForgotResetError').textContent = '';
+        document.getElementById('authForgotResetError').style.color = '#67c23a';
+        document.getElementById('authForgotResetError').textContent = '密码重置成功，请返回登录';
+        setTimeout(() => {
+            document.getElementById('authForgotBack')?.click();
+        }, 2000);
+    } catch (err) { document.getElementById('authForgotResetError').textContent = err.message; }
+    finally { btn.disabled = false; btn.textContent = '重置密码'; }
+}
 
 logoutBtn.addEventListener('click', logout);
 

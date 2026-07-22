@@ -34,6 +34,21 @@ class Settings:
 
     # 管理员
     ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+    ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "")
+
+    # 邮箱（SMTP）配置 — 用于发送密码重置验证码
+    SMTP_HOST = os.getenv("SMTP_HOST", "")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER = os.getenv("SMTP_USER", "")
+    SMTP_PASS = os.getenv("SMTP_PASS", "")
+    SMTP_FROM = os.getenv("SMTP_FROM", "")
+
+    # 微信小程序配置
+    WECHAT_APPID = os.getenv("WECHAT_APPID", "")
+    WECHAT_SECRET = os.getenv("WECHAT_SECRET", "")
+
+    # 服务地址（用于密码重置链接/开发环境日志）
+    BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:7860")
 
 
 settings = Settings()

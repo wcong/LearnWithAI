@@ -1,4 +1,4 @@
-<!-- 登录注册页面 -->
+<!-- 微信小程序一键登录页面 -->
 <view class="login-page">
   <!-- 背景装饰 -->
   <view class="login-bg">
@@ -17,62 +17,21 @@
       <text class="brand-subtitle">AI 辅助深度学习平台</text>
     </view>
 
-    <!-- 登录/注册卡片 -->
+    <!-- 微信一键登录卡片 -->
     <view class="login-card">
-      <!-- Tab 切换 -->
-      <view class="login-tabs">
-        <view class="tab-item {{isLogin ? 'active' : ''}}" bindtap="switchToLogin">登录</view>
-        <view class="tab-item {{!isLogin ? 'active' : ''}}" bindtap="switchToRegister">注册</view>
+      <view class="wechat-login-section">
+        <view class="wechat-icon">&#xe600;</view>
+        <text class="wechat-login-title">微信一键登录</text>
+        <text class="wechat-login-desc">授权微信信息即可快速开始学习之旅</text>
       </view>
 
-      <!-- 表单 -->
-      <view class="login-form">
-        <view class="form-item">
-          <view class="form-label">用户名</view>
-          <input
-            class="form-input"
-            type="text"
-            placeholder="请输入用户名"
-            value="{{username}}"
-            bindinput="onUsernameInput"
-            maxlength="50"
-          />
-        </view>
-        <view class="form-item">
-          <view class="form-label">密码</view>
-          <input
-            class="form-input"
-            type="password"
-            placeholder="请输入密码"
-            value="{{password}}"
-            bindinput="onPasswordInput"
-            maxlength="100"
-          />
-        </view>
-        <view class="form-item" wx:if="{{!isLogin}}">
-          <view class="form-label">确认密码</view>
-          <input
-            class="form-input"
-            type="password"
-            placeholder="请再次输入密码"
-            value="{{confirmPassword}}"
-            bindinput="onConfirmPasswordInput"
-            maxlength="100"
-          />
-        </view>
-      </view>
-
-      <!-- 错误提示 -->
-      <view class="error-msg" wx:if="{{errorMsg}}">
-        <text>{{errorMsg}}</text>
-      </view>
-
-      <!-- 提交按钮 -->
-      <button class="submit-btn" bindtap="onSubmit" loading="{{submitting}}" disabled="{{submitting}}">
-        {{isLogin ? '登 录' : '注 册'}}
+      <!-- 微信登录按钮 -->
+      <button class="wx-login-btn" bindtap="onWechatLogin" loading="{{loggingIn}}" disabled="{{loggingIn}}">
+        <image src="/images/wechat-icon.png" class="wx-icon" mode="aspectFit"></image>
+        {{loggingIn ? '登录中...' : '微信用户一键登录'}}
       </button>
 
-      <!-- 服务器地址配置 -->
+      <!-- 服务器配置 -->
       <view class="server-config" bindtap="showServerConfig">
         <text class="config-link">服务器配置</text>
       </view>

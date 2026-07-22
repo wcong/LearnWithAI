@@ -258,6 +258,10 @@ module.exports = {
   patch(path, data = {}, options = {}) {
     return request('PATCH', path, data, options)
   },
+  // PUT 请求
+  put(path, data = {}, options = {}) {
+    return request('PUT', path, data, options)
+  },
   // DELETE 请求
   delete(path, options = {}) {
     return request('DELETE', path, null, options)

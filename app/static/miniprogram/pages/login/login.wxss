@@ -1,4 +1,4 @@
-/* 登录注册页面样式 */
+/* 微信小程序一键登录页面样式 */
 .login-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #5b4fcf 100%);
@@ -99,90 +99,32 @@
   box-shadow: 0 8px 40px rgba(0,0,0,0.15);
 }
 
-/* Tab 切换 */
-.login-tabs {
-  display: flex;
-  margin-bottom: 28px;
-  border-bottom: 2px solid #f0f0f0;
-  position: relative;
-}
-
-.tab-item {
-  flex: 1;
+/* 微信一键登录区域 */
+.wechat-login-section {
   text-align: center;
-  padding: 10px 0;
-  font-size: 17px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  position: relative;
-  cursor: pointer;
+  margin-bottom: 24px;
 }
 
-.tab-item.active {
-  color: var(--primary-start);
-}
-
-.tab-item.active::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 30%;
-  right: 30%;
-  height: 3px;
-  background: var(--primary-gradient);
-  border-radius: 2px;
-}
-
-/* 表单 */
-.login-form {
+.wechat-login-title {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  color: #303133;
   margin-bottom: 8px;
 }
 
-.form-item {
-  margin-bottom: 18px;
-}
-
-.form-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-primary);
-  margin-bottom: 6px;
-}
-
-.form-input {
-  width: 100%;
-  height: 44px;
-  border: 2px solid #e8e8e8;
-  border-radius: 12px;
-  padding: 0 14px;
-  font-size: 15px;
-  color: var(--text-primary);
-  background: #fafafa;
-  box-sizing: border-box;
-  transition: border-color 0.2s;
-}
-
-.form-input:focus {
-  border-color: var(--primary-start);
-  background: #fff;
-}
-
-/* 错误提示 */
-.error-msg {
-  background: #fef0f0;
-  color: var(--danger-color);
+.wechat-login-desc {
+  display: block;
   font-size: 13px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  text-align: center;
+  color: #909399;
+  line-height: 1.5;
 }
 
-/* 提交按钮 */
-.submit-btn {
+/* 微信一键登录按钮 */
+.wx-login-btn {
   width: 100%;
   height: 48px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #07c160 0%, #06ad56 100%);
   color: #fff;
   font-size: 17px;
   font-weight: 600;
@@ -192,12 +134,23 @@
   align-items: center;
   justify-content: center;
   margin-top: 8px;
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.35);
+  box-shadow: 0 4px 16px rgba(7, 193, 96, 0.35);
+  padding: 0;
 }
 
-.submit-btn:active {
+.wx-login-btn:active {
   opacity: 0.9;
   transform: scale(0.98);
+}
+
+.wx-login-btn[disabled] {
+  opacity: 0.7;
+}
+
+.wx-icon {
+  width: 22px;
+  height: 22px;
+  margin-right: 8px;
 }
 
 /* 服务器配置 */
@@ -208,7 +161,7 @@
 
 .config-link {
   font-size: 13px;
-  color: var(--text-secondary);
+  color: #909399;
   text-decoration: underline;
   padding: 4px;
 }
@@ -233,7 +186,7 @@
 .config-tip {
   display: block;
   font-size: 12px;
-  color: var(--text-secondary);
+  color: #909399;
   margin-top: 6px;
   margin-bottom: 16px;
 }
@@ -254,10 +207,45 @@
 
 .btn-cancel {
   background: #f0f0f0;
-  color: var(--text-regular);
+  color: #606266;
 }
 
 .btn-confirm {
-  background: var(--primary-gradient);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #fff;
+}
+
+/* 模态框 */
+.modal-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.3s, visibility 0.3s;
+}
+
+.modal-mask.show {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* 通用表单输入（配置弹窗用） */
+.form-input {
+  width: 100%;
+  height: 44px;
+  border: 2px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 15px;
+  color: #303133;
+  background: #fafafa;
+  box-sizing: border-box;
 }

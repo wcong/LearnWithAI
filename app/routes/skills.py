@@ -31,9 +31,11 @@ class SkillUpdate(BaseModel):
 # ── 管理员鉴权 ────────────────────────────────
 
 def require_admin(user: User = Depends(get_current_user)) -> User:
-    if user.username != settings.ADMIN_USERNAME:
-        raise HTTPException(403, "仅管理员可操作")
-    return user
+    if user.username == settings.ADMIN_USERNAME:
+        return user
+    if settings.ADMIN_EMAIL and user.email == settings.ADMIN_EMAIL:
+        return user
+    raise HTTPException(403, "仅管理员可操作")
 
 
 # ── 公共接口：获取当前用户可用的技能列表 ────────

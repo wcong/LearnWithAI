@@ -56,5 +56,18 @@ Page({
 
   goToSkills() {
     wx.navigateTo({ url: '/pages/skills/skills' })
+  },
+
+  onLogout() {
+    wx.showModal({
+      title: '退出登录',
+      content: '确定要退出登录吗？',
+      confirmColor: '#f56c6c',
+      success(res) {
+        if (res.confirm) {
+          auth.logout()
+        }
+      }
+    })
   }
 })

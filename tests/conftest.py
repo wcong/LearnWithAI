@@ -31,7 +31,7 @@ from app.database import Base  # noqa: E402
 # 导入所有模型以在 Base.metadata 上注册表
 from app.models import (  # noqa: E402, F401
     User, Area, ChatMessage, AreaNote, NoteEmbedding,
-    LearningSession, UsageLog, AreaAnalysis, Skill, LoginHistory,
+    LearningSession, UsageLog, AreaAnalysis, Skill, LoginHistory, PasswordReset,
 )
 
 # -----------------------------------------------------------
@@ -110,11 +110,11 @@ def test_client(_override_db):
 
 @pytest.fixture
 def test_user(db_session):
-    """创建并返回一个测试用户"""
+    """创建并返回一个测试用户（邮箱用户）"""
     from app.auth import hash_password
     from app.models import User
 
-    user = User(username="testuser", password_hash=hash_password("testpass123"))
+    user = User(username="testuser", email="testuser@test.com", password_hash=hash_password("testpass123"))
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
@@ -152,7 +152,7 @@ def admin_user(db_session):
     from app.auth import hash_password
     from app.models import User
 
-    admin = User(username="admin", password_hash=hash_password("admin123"))
+    admin = User(username="admin", email="admin@test.com", password_hash=hash_password("admin123"))
     db_session.add(admin)
     db_session.commit()
     db_session.refresh(admin)

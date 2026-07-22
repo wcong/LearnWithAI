@@ -70,6 +70,11 @@
             <text wx:else>{{msg.content}}</text>
           </view>
           <view class="msg-time" wx:if="{{msg.created_at}}">{{msg.created_at}}</view>
+          <!-- AI 消息操作按钮 -->
+          <view class="msg-actions" wx:if="{{msg.role === 'assistant' && currentAreaId}}" catchtap="stopPropagation">
+            <view class="msg-action-btn sub-btn" bindtap="onAddChildFromMessage" data-area-id="{{currentAreaId}}" data-area-name="{{currentAreaName}}">➕ 添加子领域</view>
+            <view class="msg-action-btn gen-btn" bindtap="onGenerateFromMessage" data-area-id="{{currentAreaId}}">✨ 生成子领域</view>
+          </view>
         </view>
       </view>
 
@@ -125,7 +130,7 @@
         <button
           class="send-btn {{sending ? 'sending' : ''}}"
           bindtap="onSendMessage"
-          disabled="{{!inputMessage.trim() || !currentAreaId || sending}}"
+          disabled="{{sending}}"
         >
           <text wx:if="{{!sending}}">发送</text>
           <text wx:else>⏳</text>

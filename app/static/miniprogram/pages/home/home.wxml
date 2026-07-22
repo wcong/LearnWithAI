@@ -47,6 +47,9 @@
 
   <!-- 底部信息 -->
   <view class="home-footer">
+    <view class="logout-btn" bindtap="onLogout">
+      <text>退出登录</text>
+    </view>
     <text class="footer-text">探知 v1.0</text>
   </view>
 

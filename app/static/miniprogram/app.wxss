@@ -99,6 +99,15 @@ page {
   font-weight: 500;
   text-align: center;
   transition: opacity 0.2s;
+  display: inline-block;
+  margin: 0;
+  line-height: 1.4;
+  min-height: 0;
+}
+
+.btn-primary::after {
+  border: none;
+  content: none;
 }
 
 .btn-primary:active {
@@ -108,6 +117,11 @@ page {
 .btn-small {
   padding: 6px 16px;
   font-size: var(--font-size-sm);
+}
+
+.btn-small::after {
+  border: none;
+  content: none;
 }
 
 /* 底部导航栏 */

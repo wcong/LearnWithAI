@@ -68,6 +68,16 @@
   font-size: 14px;
   font-weight: 500;
   text-align: center;
+  display: block;
+  box-sizing: border-box;
+  line-height: 1.4;
+  margin: 0;
+  min-height: 0;
+}
+
+.action-btn::after {
+  border: none;
+  content: none;
 }
 
 /* 右侧抽屉 */
@@ -156,6 +166,54 @@
   color: var(--text-secondary);
   margin-top: 4px;
   text-align: right;
+}
+
+/* AI 消息操作按钮 */
+.msg-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.msg-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  cursor: pointer;
+  line-height: 1.4;
+  min-height: 0;
+}
+
+.msg-action-btn::after {
+  border: none;
+}
+
+.msg-action-btn.sub-btn {
+  color: var(--primary-start);
+  border-color: var(--primary-start);
+  background: rgba(102, 126, 234, 0.06);
+}
+
+.msg-action-btn.sub-btn:active {
+  background: var(--primary-start);
+  color: #fff;
+}
+
+.msg-action-btn.gen-btn {
+  color: #6366f1;
+  border-color: #6366f1;
+  background: transparent;
+}
+
+.msg-action-btn.gen-btn:active {
+  background: #6366f1;
+  color: #fff;
 }
 
 .message-item.user .msg-time {
@@ -270,6 +328,15 @@
   justify-content: center;
   flex-shrink: 0;
   cursor: pointer;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+  min-height: 0;
+}
+
+.send-btn::after {
+  border: none;
+  content: none;
 }
 
 .send-btn[disabled] {
@@ -371,12 +438,22 @@
 .modal-btn {
   flex: 1;
   height: 40px;
+  line-height: 40px;
   border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 500;
   text-align: center;
-  line-height: 40px;
   cursor: pointer;
+  padding: 0;
+  margin: 0;
+  display: block;
+  box-sizing: border-box;
+  min-height: 0;
+}
+
+.modal-btn::after {
+  border: none;
+  content: none;
 }
 
 .modal-btn.confirm {

@@ -54,12 +54,31 @@ function switchToInput() {
 
 let isLoginMode = true;
 
+function toggleMobilePlanAuthRegisterFields(show) {
+    const el = document.getElementById('mPlanAuthRegisterFields');
+    if (el) el.style.display = show ? '' : 'none';
+}
+
+function resetMPlanRegStep() {
+    const s1 = document.getElementById('mPlanAuthRegStep1');
+    const s2 = document.getElementById('mPlanAuthRegStep2');
+    if (s1) s1.style.display = '';
+    if (s2) s2.style.display = 'none';
+    document.getElementById('mPlanAuthPassword').style.display = '';
+    document.getElementById('mPlanAuthEmail').removeAttribute('readonly');
+}
+
 document.getElementById('mPlanTabLogin').addEventListener('click', () => {
     isLoginMode = true;
     document.getElementById('mPlanTabLogin').classList.add('active');
     document.getElementById('mPlanTabRegister').classList.remove('active');
     document.getElementById('mPlanAuthBtn').textContent = '登录';
+    document.getElementById('mPlanAuthBtn').style.display = '';
     document.getElementById('mPlanAuthError').textContent = '';
+    document.getElementById('mPlanAuthError').style.color = '#ef4444';
+    toggleMobilePlanAuthRegisterFields(false);
+    document.getElementById('mPlanAuthPassword').style.display = '';
+    document.getElementById('mPlanAuthEmail').removeAttribute('readonly');
 });
 
 document.getElementById('mPlanTabRegister').addEventListener('click', () => {
@@ -67,29 +86,139 @@ document.getElementById('mPlanTabRegister').addEventListener('click', () => {
     document.getElementById('mPlanTabRegister').classList.add('active');
     document.getElementById('mPlanTabLogin').classList.remove('active');
     document.getElementById('mPlanAuthBtn').textContent = '注册';
+    document.getElementById('mPlanAuthBtn').style.display = 'none';
     document.getElementById('mPlanAuthError').textContent = '';
+    document.getElementById('mPlanAuthError').style.color = '#ef4444';
+    toggleMobilePlanAuthRegisterFields(true);
+    resetMPlanRegStep();
+    document.getElementById('mPlanAuthPassword').style.display = 'none';
 });
 
 document.getElementById('mPlanAuthForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const username = document.getElementById('mPlanAuthUsername').value.trim();
-    const password = document.getElementById('mPlanAuthPassword').value.trim();
-    if (!username || !password) { document.getElementById('mPlanAuthError').textContent = '请填写用户名和密码'; return; }
-    const btn = document.getElementById('mPlanAuthBtn');
-    btn.disabled = true;
-    btn.textContent = '处理中...';
-    document.getElementById('mPlanAuthError').textContent = '';
-    try {
-        const endpoint = isLoginMode ? '/auth/login' : '/auth/register';
-        const data = await api(endpoint, { method: 'POST', body: { username, password } });
-        token = data.token;
-        currentUser = { id: data.user_id, username: data.username };
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(currentUser));
-        showApp();
-    } catch (err) { document.getElementById('mPlanAuthError').textContent = err.message; }
-    finally { btn.disabled = false; btn.textContent = isLoginMode ? '登录' : '注册'; }
+    const authEmail = document.getElementById('mPlanAuthEmail');
+    const authError = document.getElementById('mPlanAuthError');
+    const authBtn = document.getElementById('mPlanAuthBtn');
+    const email = authEmail.value.trim();
+
+    if (isLoginMode) {
+        const password = document.getElementById('mPlanAuthPassword').value.trim();
+        if (!email || !password) { authError.textContent = '请填写邮箱和密码'; return; }
+        authBtn.disabled = true;
+        authBtn.textContent = '处理中...';
+        authError.textContent = '';
+        try {
+            const data = await api('/auth/login', { method: 'POST', body: { email, password } });
+            token = data.token;
+            currentUser = { id: data.user_id, username: data.username };
+            localStorage.setItem('token', token);
+            localStorage.setItem('user', JSON.stringify(currentUser));
+            showApp();
+        } catch (err) { authError.textContent = err.message; }
+        finally { authBtn.disabled = false; authBtn.textContent = '登录'; }
+    } else {
+        const step2 = document.getElementById('mPlanAuthRegStep2');
+        if (!step2 || step2.style.display === 'none') {
+            if (!email || email.indexOf('@') === -1) { authError.textContent = '请输入有效的邮箱'; return; }
+            const sendBtn = document.getElementById('mPlanAuthRegSendBtn');
+            if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = '发送中...'; }
+            authError.textContent = '';
+            authError.style.color = '#ef4444';
+            try {
+                await api('/auth/register-send-code', { method: 'POST', body: { email } });
+                document.getElementById('mPlanAuthRegStep1').style.display = 'none';
+                document.getElementById('mPlanAuthRegStep2').style.display = '';
+                authBtn.style.display = '';
+                document.getElementById('mPlanAuthPassword').style.display = 'none';
+                authEmail.setAttribute('readonly', 'readonly');
+                authError.textContent = '验证码已发送，请查收邮件';
+                authError.style.color = '#67c23a';
+            } catch (err) {
+                if (err.message.includes('已注册')) {
+                    document.getElementById('mPlanTabLogin').click();
+                    authError.textContent = '该邮箱已注册，请直接登录';
+                } else {
+                    authError.textContent = err.message;
+                }
+            }
+            finally { if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = '发送验证码'; } }
+        } else {
+            const code = document.getElementById('mPlanAuthRegCode')?.value?.trim();
+            const password = document.getElementById('mPlanAuthRegPassword')?.value?.trim();
+            const confirmPw = document.getElementById('mPlanAuthConfirmPassword')?.value || '';
+            const nickname = document.getElementById('mPlanAuthNickname')?.value?.trim() || '';
+            if (!code || !password) { authError.textContent = '请填写验证码和密码'; return; }
+            if (password !== confirmPw) { authError.textContent = '两次输入的密码不一致'; return; }
+            if (password.length < 4) { authError.textContent = '密码至少 4 个字符'; return; }
+            authBtn.disabled = true;
+            authBtn.textContent = '注册中...';
+            authError.textContent = '';
+            authError.style.color = '#ef4444';
+            try {
+                const data = await api('/auth/register', { method: 'POST', body: { email, password, code, nickname } });
+                token = data.token;
+                currentUser = { id: data.user_id, username: data.username };
+                localStorage.setItem('token', token);
+                localStorage.setItem('user', JSON.stringify(currentUser));
+                showApp();
+            } catch (err) { authError.textContent = err.message; }
+            finally { authBtn.disabled = false; authBtn.textContent = '注册'; }
+        }
+    }
 });
+
+// 忘记密码 — 事件委托
+document.getElementById('mPlanAuthOverlay').addEventListener('click', (e) => {
+    const target = e.target;
+    if (target.id === 'mPlanAuthForgotLink') {
+        document.getElementById('mPlanAuthForm').style.display = 'none';
+        document.getElementById('mPlanAuthForgotPanel').style.display = '';
+        document.getElementById('mPlanAuthForgotError').textContent = '';
+        document.getElementById('mPlanAuthForgotResetError').textContent = '';
+        document.getElementById('mPlanAuthForgotStep2').style.display = 'none';
+        document.getElementById('mPlanAuthForgotStep1').style.display = '';
+    } else if (target.id === 'mPlanAuthForgotBack') {
+        document.getElementById('mPlanAuthForgotPanel').style.display = 'none';
+        document.getElementById('mPlanAuthForm').style.display = '';
+    } else if (target.id === 'mPlanAuthForgotSendBtn') {
+        handleMPlanForgotSend();
+    } else if (target.id === 'mPlanAuthForgotResetBtn') {
+        handleMPlanForgotReset();
+    }
+});
+
+async function handleMPlanForgotSend() {
+    const email = document.getElementById('mPlanAuthForgotEmail')?.value?.trim();
+    if (!email) { document.getElementById('mPlanAuthForgotError').textContent = '请输入邮箱'; return; }
+    const btn = document.getElementById('mPlanAuthForgotSendBtn');
+    btn.disabled = true;
+    btn.textContent = '发送中...';
+    document.getElementById('mPlanAuthForgotError').textContent = '';
+    try {
+        await api('/auth/forgot-password', { method: 'POST', body: { email } });
+        document.getElementById('mPlanAuthForgotStep1').style.display = 'none';
+        document.getElementById('mPlanAuthForgotStep2').style.display = '';
+    } catch (err) { document.getElementById('mPlanAuthForgotError').textContent = err.message; }
+    finally { btn.disabled = false; btn.textContent = '发送验证码'; }
+}
+
+async function handleMPlanForgotReset() {
+    const email = document.getElementById('mPlanAuthForgotEmail')?.value?.trim();
+    const code = document.getElementById('mPlanAuthForgotCode')?.value?.trim();
+    const newPassword = document.getElementById('mPlanAuthForgotNewPassword')?.value?.trim();
+    if (!code || !newPassword) { document.getElementById('mPlanAuthForgotResetError').textContent = '请填写验证码和新密码'; return; }
+    const btn = document.getElementById('mPlanAuthForgotResetBtn');
+    btn.disabled = true;
+    btn.textContent = '重置中...';
+    document.getElementById('mPlanAuthForgotResetError').textContent = '';
+    try {
+        await api('/auth/reset-password', { method: 'POST', body: { email, code, new_password: newPassword } });
+        document.getElementById('mPlanAuthForgotResetError').style.color = '#67c23a';
+        document.getElementById('mPlanAuthForgotResetError').textContent = '密码重置成功，请返回登录';
+        setTimeout(() => { document.getElementById('mPlanAuthForgotBack')?.click(); }, 2000);
+    } catch (err) { document.getElementById('mPlanAuthForgotResetError').textContent = err.message; }
+    finally { btn.disabled = false; btn.textContent = '重置密码'; }
+}
 
 // ============================================================
 //  Thinking Panel

@@ -265,7 +265,12 @@ Page({
 
   onSendMessage() {
     const { inputMessage, currentAreaId, sending, selectedSkillId } = this.data
-    if (!inputMessage.trim() || !currentAreaId || sending) return
+    if (sending) return
+    if (!currentAreaId) {
+      util.showToast('请先从左侧菜单选择学习领域')
+      return
+    }
+    if (!inputMessage.trim()) return
 
     // 添加用户消息
     const userMsg = {
@@ -388,6 +393,81 @@ Page({
         })
         .exec()
     }, 100)
+  },
+
+  /* ====== AI 消息操作按钮 ====== */
+
+  onAddChildFromMessage(e) {
+    const areaId = e.currentTarget.dataset.areaId
+    const areaName = e.currentTarget.dataset.areaName
+    if (!areaId) return
+    this.setData({
+      showAreaModal: true,
+      editingArea: false,
+      editingAreaId: null,
+      areaFormName: '',
+      areaFormDesc: '',
+      parentAreaId: areaId,
+      parentAreaName: areaName
+    })
+  },
+
+  onGenerateFromMessage(e) {
+    const areaId = e.currentTarget.dataset.areaId
+    if (!areaId) return
+    const node = { id: areaId, name: this.data.currentAreaName }
+    this.setData({
+      showActionMenu: false,
+      showGeneratePanel: true,
+      generateSubareas: [],
+      generateDone: false,
+      generateError: '',
+      actionAreaId: areaId,
+      actionAreaNode: node
+    })
+    this.startGenerateSSE(areaId)
+  },
+
+  startGenerateSSE(areaId) {
+    const that = this
+    let subareasBuffer = ''
+    sse.createSSEConnection({
+      url: api.getBaseUrl() + `/api/areas/${areaId}/generate-subareas/stream`,
+      data: {},
+      onResult(data) {
+        if (data.chunk) {
+          subareasBuffer += data.chunk
+          try {
+            const parsed = JSON.parse(subareasBuffer)
+            if (Array.isArray(parsed)) {
+              that.setData({
+                generateSubareas: parsed.map((item, i) => ({
+                  ...item,
+                  index: i
+                }))
+              })
+            }
+          } catch (e) {}
+        }
+      },
+      onDone() {
+        that.setData({ generateDone: true })
+        try {
+          const parsed = JSON.parse(subareasBuffer)
+          if (Array.isArray(parsed)) {
+            that.setData({
+              generateSubareas: parsed.map((item, i) => ({
+                ...item,
+                index: i
+              }))
+            })
+          }
+        } catch (e) {}
+      },
+      onError(msg) {
+        that.setData({ generateError: msg, generateDone: true })
+      }
+    })
   },
 
   /* ====== 创建/编辑领域 ====== */
@@ -577,58 +657,17 @@ Page({
 
   onGenerateSubareas() {
     const node = this.data.actionAreaNode
-    const that = this
+    if (!node) return
     this.setData({
       showActionMenu: false,
       showGeneratePanel: true,
       generateSubareas: [],
       generateDone: false,
-      generateError: ''
+      generateError: '',
+      actionAreaId: node.id,
+      actionAreaNode: node
     })
-
-    let subareasBuffer = ''
-
-    sse.createSSEConnection({
-      url: api.getBaseUrl() + `/api/areas/${node.id}/generate-subareas/stream`,
-      data: {},
-      onResult(data) {
-        if (data.chunk) {
-          subareasBuffer += data.chunk
-          // 尝试解析 JSON
-          try {
-            const parsed = JSON.parse(subareasBuffer)
-            if (Array.isArray(parsed)) {
-              that.setData({
-                generateSubareas: parsed.map((item, i) => ({
-                  ...item,
-                  index: i
-                }))
-              })
-            }
-          } catch (e) {
-            // 还未完整，继续累积
-          }
-        }
-      },
-      onDone() {
-        that.setData({ generateDone: true })
-        // 尝试最终解析
-        try {
-          const parsed = JSON.parse(subareasBuffer)
-          if (Array.isArray(parsed)) {
-            that.setData({
-              generateSubareas: parsed.map((item, i) => ({
-                ...item,
-                index: i
-              }))
-            })
-          }
-        } catch (e) {}
-      },
-      onError(msg) {
-        that.setData({ generateError: msg, generateDone: true })
-      }
-    })
+    this.startGenerateSSE(node.id)
   },
 
   onSubareaNameEdit(e) {

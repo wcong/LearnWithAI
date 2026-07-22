@@ -17,25 +17,28 @@ from app.models import (
     Skill,
     LoginHistory,
     SystemConfig,
+    PasswordReset,
 )
 
 
 class TestUserModel:
     def test_create_user(self, db_session):
-        """创建 User 模型"""
-        user = User(username="alice", password_hash="salt$hash")
+        """创建 User 模型（邮箱用户）"""
+        user = User(username="alice", email="alice@test.com", password_hash="salt$hash")
         db_session.add(user)
         db_session.commit()
         assert user.id is not None
         assert user.username == "alice"
+        assert user.email == "alice@test.com"
 
     def test_to_dict(self, db_session):
         """User.to_dict() 序列化"""
-        user = User(username="bob", password_hash="salt$hash")
+        user = User(username="bob", email="bob@test.com", password_hash="salt$hash")
         db_session.add(user)
         db_session.commit()
         d = user.to_dict()
         assert d["username"] == "bob"
+        assert d["email"] == "bob@test.com"
         assert "id" in d
         assert "created_at" in d
 
@@ -46,6 +49,22 @@ class TestUserModel:
         with pytest.raises(Exception):
             db_session.add(User(username="unique", password_hash="y"))
             db_session.commit()
+
+    def test_unique_email(self, db_session):
+        """邮箱必须唯一"""
+        db_session.add(User(username="user1", email="same@test.com", password_hash="x"))
+        db_session.commit()
+        with pytest.raises(Exception):
+            db_session.add(User(username="user2", email="same@test.com", password_hash="y"))
+            db_session.commit()
+
+    def test_create_wechat_user(self, db_session):
+        """创建微信用户（无密码）"""
+        user = User(username="wx_user", wechat_openid="openid_xxxxx", password_hash=None)
+        db_session.add(user)
+        db_session.commit()
+        assert user.wechat_openid == "openid_xxxxx"
+        assert user.password_hash is None
 
 
 class TestAreaModel:

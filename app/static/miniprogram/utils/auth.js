@@ -1,59 +1,30 @@
 /**
  * 认证管理模块
- * 处理登录、注册、Token 管理、登录态检查
+ * 处理微信登录、Token 管理、登录态检查
  */
 const api = require('./api')
 
 /**
- * 用户登录
- * @param {string} username
- * @param {string} password
+ * 微信小程序一键登录
+ * @param {string} code - wx.login 获取的临时 code
  * @returns {Promise<object>} { token, user_id, username }
  */
-function login(username, password) {
-  return api.post('/api/auth/login', {
-    username: username.trim(),
-    password: password
-  }).then(data => {
+function wechatLogin(code) {
+  return api.post('/api/auth/wechat-login', { code }).then(data => {
     // 保存认证信息
     wx.setStorageSync('token', data.token || data.access_token)
     wx.setStorageSync('userInfo', {
       user_id: data.user_id,
-      username: data.username
+      username: data.username,
+      nickname: data.nickname || ''
     })
     // 更新全局数据
     const app = getApp()
     app.setToken(data.token || data.access_token)
     app.setUserInfo({
       user_id: data.user_id,
-      username: data.username
-    })
-    return data
-  })
-}
-
-/**
- * 用户注册
- * @param {string} username
- * @param {string} password
- * @returns {Promise<object>} { token, user_id, username }
- */
-function register(username, password) {
-  return api.post('/api/auth/register', {
-    username: username.trim(),
-    password: password
-  }).then(data => {
-    // 注册成功后自动登录
-    wx.setStorageSync('token', data.token || data.access_token)
-    wx.setStorageSync('userInfo', {
-      user_id: data.user_id,
-      username: data.username
-    })
-    const app = getApp()
-    app.setToken(data.token || data.access_token)
-    app.setUserInfo({
-      user_id: data.user_id,
-      username: data.username
+      username: data.username,
+      nickname: data.nickname || ''
     })
     return data
   })
@@ -110,8 +81,7 @@ function checkLogin() {
 }
 
 module.exports = {
-  login,
-  register,
+  wechatLogin,
   logout,
   isLoggedIn,
   getToken,

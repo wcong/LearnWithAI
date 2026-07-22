@@ -1,7 +1,7 @@
 {
   "description": "探知 - AI辅助深度学习",
   "customConfig": {
-    "serverUrl": "http://localhost:8000",
+    "serverUrl": "https://www.aitanzhi.ln.cn",
     "serverUrlDesc": "后端 API 服务地址，可在此修改默认值"
   },
   "packOptions": {

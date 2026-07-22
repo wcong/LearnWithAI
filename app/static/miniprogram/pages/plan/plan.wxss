@@ -208,6 +208,15 @@
   font-weight: 500;
   padding: 10px 32px;
   border-radius: 20px;
+  display: inline-block;
+  margin: 0;
+  line-height: 1.4;
+  min-height: 0;
+}
+
+.stop-btn::after {
+  border: none;
+  content: none;
 }
 
 /* 未开始状态 */
@@ -364,6 +373,15 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 20px rgba(79, 172, 254, 0.3);
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+  min-height: 0;
+}
+
+.start-btn::after {
+  border: none;
+  content: none;
 }
 
 .start-btn[disabled] {

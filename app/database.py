@@ -43,8 +43,8 @@ def get_db_type() -> str:
 
 
 def init_db():
-    """创建所有表，并自动迁移旧的 areas 表（补充 user_id 列）"""
-    from app.models import Area, ChatMessage, LearningSession, UsageLog, User, NoteEmbedding, LoginHistory, Skill, SystemConfig  # noqa: F401
+    """创建所有表，并自动迁移旧的 areas / users 表（补充新列）"""
+    from app.models import Area, ChatMessage, LearningSession, UsageLog, User, NoteEmbedding, LoginHistory, Skill, SystemConfig, PasswordReset  # noqa: F401
     Base.metadata.create_all(bind=engine)
 
     # 迁移：旧版 areas 表缺少 user_id 列
@@ -55,11 +55,79 @@ def init_db():
     except Exception:
         pass  # 列已存在则忽略
 
+    # 迁移：旧版 users 表缺少 email 列
+    _add_column("users", "email", "VARCHAR(200)")
+    # 迁移：旧版 users 表缺少 wechat_openid 列
+    _add_column("users", "wechat_openid", "VARCHAR(100)")
+    # 迁移：旧版 users 表缺少 nickname 列
+    _add_column("users", "nickname", "VARCHAR(100)")
+    # 迁移：旧版 users 表 password_hash 改为 nullable
+    _make_column_nullable("users", "password_hash")
+
     # 初始化系统默认配置
     _init_default_configs()
 
     # 创建默认面试准备 Skill（仅首次创建）
     _create_default_skills()
+
+
+def _add_column(table: str, column: str, col_type: str):
+    """安全添加列（若已存在则跳过）"""
+    try:
+        with engine.connect() as conn:
+            conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}"))
+            conn.commit()
+    except Exception:
+        pass
+
+
+def _make_column_nullable(table: str, column: str):
+    """安全将列改为 nullable（支持 MySQL 和 SQLite）"""
+    try:
+        if DATABASE_URL.startswith("mysql"):
+            with engine.connect() as conn:
+                conn.execute(text(f"ALTER TABLE {table} MODIFY `{column}` VARCHAR(256) NULL"))
+                conn.commit()
+        elif DATABASE_URL.startswith("sqlite"):
+            # SQLite 不支持 ALTER COLUMN，用重建表方式
+            # 先尝试 INSERT NULL 看是否被拒绝，如被拒则重建表
+            try:
+                with engine.connect() as conn:
+                    conn.execute(text(f"INSERT INTO {table} (username, {column}) VALUES ('_migrate_null_check', NULL)"))
+                    conn.execute(text(f"DELETE FROM {table} WHERE username = '_migrate_null_check'"))
+                    conn.commit()
+            except Exception:
+                # 列有 NOT NULL 约束，需重建表
+                _sqlite_rebuild_column_nullable(table, column)
+    except Exception:
+        pass
+
+
+def _sqlite_rebuild_column_nullable(table: str, column: str):
+    """SQLite 重建表移除 NOT NULL 约束"""
+    from app.models import User  # noqa: F401
+    from sqlalchemy import inspect
+
+    inspector = inspect(engine)
+    columns = inspector.get_columns(table)
+    col_defs = []
+    for col in columns:
+        col_type = str(col["type"])
+        col_name = col["name"]
+        nullable = "NULL" if col["nullable"] else "NOT NULL"
+        default = f"DEFAULT {col['default']}" if col["default"] else ""
+        if col_name == column:
+            nullable = "NULL"  # 强制改为可空
+        col_defs.append(f'"{col_name}" {col_type} {nullable} {default}'.strip())
+
+    with engine.connect() as conn:
+        conn.execute(text("PRAGMA foreign_keys=OFF"))
+        conn.execute(text(f'CREATE TABLE {table}_new ({", ".join(col_defs)})'))
+        conn.execute(text(f'INSERT INTO {table}_new SELECT * FROM {table}'))
+        conn.execute(text(f'DROP TABLE {table}'))
+        conn.execute(text(f'ALTER TABLE {table}_new RENAME TO {table}'))
+        conn.execute(text("PRAGMA foreign_keys=ON"))
+        conn.commit()
 
 
 def _init_default_configs():

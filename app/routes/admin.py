@@ -16,10 +16,12 @@ router = APIRouter(prefix="/api/admin", tags=["Admin"])
 
 
 def require_admin(user: User = Depends(get_current_user)) -> User:
-    """检查当前用户是否为配置的管理员"""
-    if user.username != settings.ADMIN_USERNAME:
-        raise HTTPException(403, "仅管理员可访问")
-    return user
+    """检查当前用户是否为配置的管理员（支持 username 和 email）"""
+    if user.username == settings.ADMIN_USERNAME:
+        return user
+    if settings.ADMIN_EMAIL and user.email == settings.ADMIN_EMAIL:
+        return user
+    raise HTTPException(403, "仅管理员可访问")
 
 
 class ConfigUpdateRequest(BaseModel):

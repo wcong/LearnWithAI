@@ -20,14 +20,50 @@
             <button class="auth-tab active" id="tabLogin">登录</button>
             <button class="auth-tab" id="tabRegister">注册</button>
         </div>
+        <!-- 登录/注册表单 -->
         <form id="authForm" onsubmit="return false;">
-            <label>用户名</label>
-            <input type="text" id="authUsername" placeholder="输入用户名" required autocomplete="username">
+            <label>邮箱</label>
+            <input type="email" id="authEmail" placeholder="输入邮箱" required autocomplete="email">
             <label>密码</label>
             <input type="password" id="authPassword" placeholder="输入密码" required autocomplete="current-password">
+            <div id="authRegisterFields" style="display:none;">
+                <div id="authRegStep1">
+                    <button type="submit" formnovalidate class="auth-btn" id="authRegSendBtn" style="margin-bottom:10px;">发送验证码</button>
+                </div>
+                <div id="authRegStep2" style="display:none;">
+                    <label>验证码</label>
+                    <input type="text" id="authRegCode" placeholder="6 位数字验证码" maxlength="6">
+                    <label>密码</label>
+                    <input type="password" id="authRegPassword" placeholder="至少 4 个字符">
+                    <label>确认密码</label>
+                    <input type="password" id="authConfirmPassword" placeholder="再次输入密码">
+                    <label>昵称（选填）</label>
+                    <input type="text" id="authNickname" placeholder="显示名称">
+                </div>
+            </div>
             <p class="auth-error" id="authError"></p>
             <button type="submit" class="auth-btn" id="authBtn">登录</button>
+            <p class="auth-forgot-link" id="authForgotLink" style="margin-top:10px;text-align:center;font-size:12px;color:#909399;cursor:pointer;">忘记密码？</p>
         </form>
+        <!-- 忘记密码面板 -->
+        <div id="authForgotPanel" style="display:none;">
+            <p style="text-align:center;font-size:14px;color:#606266;margin-bottom:16px;">重置密码</p>
+            <div id="authForgotStep1">
+                <label>邮箱</label>
+                <input type="email" id="authForgotEmail" placeholder="输入注册邮箱">
+                <p class="auth-error" id="authForgotError"></p>
+                <button type="button" class="auth-btn" id="authForgotSendBtn">发送验证码</button>
+            </div>
+            <div id="authForgotStep2" style="display:none;">
+                <label>验证码</label>
+                <input type="text" id="authForgotCode" placeholder="6 位数字验证码" maxlength="6">
+                <label>新密码</label>
+                <input type="password" id="authForgotNewPassword" placeholder="至少 4 个字符">
+                <p class="auth-error" id="authForgotResetError"></p>
+                <button type="button" class="auth-btn" id="authForgotResetBtn">重置密码</button>
+            </div>
+            <p class="auth-forgot-link" id="authForgotBack" style="margin-top:10px;text-align:center;font-size:12px;color:#409eff;cursor:pointer;">← 返回登录</p>
+        </div>
     </div>
 </div>
 
