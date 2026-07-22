@@ -9,7 +9,7 @@ Page({
   data: {
     loggingIn: false,
     showConfig: false,
-    serverUrl: 'http://localhost:8000',
+    serverUrl: 'https://aitanzhi.ln.cn',
   },
 
   onLoad() {
