@@ -5,10 +5,12 @@ import json
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
 from app.database import get_db
 from app.models import User
+from app.utils import check_daily_token_limit
 from app.agents.plan_agent import run_plan_mode
 from app.agents.streaming_handler import StreamingCallbackHandler
 
@@ -21,7 +23,8 @@ class StartPlanRequest(BaseModel):
 
 
 @router.post("/start")
-async def start_plan(req: StartPlanRequest, user: User = Depends(get_current_user)):
+async def start_plan(req: StartPlanRequest, db: Session = Depends(get_db),
+                      user: User = Depends(get_current_user)):
     """启动 Plan Mode 领域深度学习规划
 
     接收用户输入的领域名称，启动递归探索流程，通过 SSE 实时推送进展。
@@ -31,6 +34,20 @@ async def start_plan(req: StartPlanRequest, user: User = Depends(get_current_use
         raise HTTPException(400, "领域名称不能为空")
     if len(domain) > 100:
         raise HTTPException(400, "领域名称过长（最长 100 字）")
+
+    # 检查每日免费额度
+    limit_info = check_daily_token_limit(user.id, db)
+    if limit_info:
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "message": "您今日的免费 Token 额度已用尽，请明天再来。",
+                "used_prompt": limit_info["used_prompt"],
+                "used_completion": limit_info["used_completion"],
+                "limit_prompt": limit_info["limit_prompt"],
+                "limit_output": limit_info["limit_output"],
+            }
+        )
 
     queue: asyncio.Queue = asyncio.Queue()
     callback_handler = StreamingCallbackHandler(queue)

@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.auth import get_current_user
 from app.database import get_db
 from app.models import Area, AreaAnalysis, User
+from app.utils import check_daily_token_limit
 from app.agents.learning_agent import (
     run_examine_agent,
     run_examine_agent_stream,
@@ -160,6 +161,20 @@ async def examine_area(area_id: int, db: Session = Depends(get_db),
     if not children:
         raise HTTPException(400, "该领域没有子领域可审查")
 
+    # 检查每日免费额度
+    limit_info = check_daily_token_limit(user.id, db)
+    if limit_info:
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "message": "您今日的免费 Token 额度已用尽，请明天再来。",
+                "used_prompt": limit_info["used_prompt"],
+                "used_completion": limit_info["used_completion"],
+                "limit_prompt": limit_info["limit_prompt"],
+                "limit_output": limit_info["limit_output"],
+            }
+        )
+
     # 交给 agent 驱动审查流程
     result = await run_examine_agent(area_id, area.name)
 
@@ -181,6 +196,20 @@ async def examine_area_stream(area_id: int, db: Session = Depends(get_db),
     children = db.query(Area).filter(Area.parent_id == area_id).count()
     if not children:
         raise HTTPException(400, "该领域没有子领域可审查")
+
+    # 检查每日免费额度
+    limit_info = check_daily_token_limit(user.id, db)
+    if limit_info:
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "message": "您今日的免费 Token 额度已用尽，请明天再来。",
+                "used_prompt": limit_info["used_prompt"],
+                "used_completion": limit_info["used_completion"],
+                "limit_prompt": limit_info["limit_prompt"],
+                "limit_output": limit_info["limit_output"],
+            }
+        )
 
     queue: asyncio.Queue = asyncio.Queue()
     callback_handler = StreamingCallbackHandler(queue)
@@ -264,6 +293,20 @@ async def generate_subareas_stream(area_id: int, db: Session = Depends(get_db),
     if not area:
         raise HTTPException(404, "学习领域不存在")
     _assert_owner(area, user)
+
+    # 检查每日免费额度
+    limit_info = check_daily_token_limit(user.id, db)
+    if limit_info:
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "message": "您今日的免费 Token 额度已用尽，请明天再来。",
+                "used_prompt": limit_info["used_prompt"],
+                "used_completion": limit_info["used_completion"],
+                "limit_prompt": limit_info["limit_prompt"],
+                "limit_output": limit_info["limit_output"],
+            }
+        )
 
     queue: asyncio.Queue = asyncio.Queue()
     callback_handler = StreamingCallbackHandler(queue)
@@ -349,6 +392,20 @@ async def polish_subareas(area_id: int, body: PolishSubareasRequest,
 
     if not body.sub_areas:
         raise HTTPException(400, "子领域列表不能为空")
+
+    # 检查每日免费额度
+    limit_info = check_daily_token_limit(user.id, db)
+    if limit_info:
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "message": "您今日的免费 Token 额度已用尽，请明天再来。",
+                "used_prompt": limit_info["used_prompt"],
+                "used_completion": limit_info["used_completion"],
+                "limit_prompt": limit_info["limit_prompt"],
+                "limit_output": limit_info["limit_output"],
+            }
+        )
 
     polished = await run_polish_subareas(body.sub_areas)
     return {"sub_areas": polished}

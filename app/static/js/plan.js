@@ -15,6 +15,11 @@ async function api(path, opts = {}) {
     }
     const res = await fetch('/api' + path, { ...opts, headers });
     if (res.status === 401) { logout(); throw new Error('登录已过期'); }
+    if (res.status === 429) {
+        const err = await res.json().catch(() => ({}));
+        showTokenLimitPanel(err.detail);
+        throw new Error(err.detail?.message || '免费 Token 额度已用尽');
+    }
     if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.detail || `请求失败 (${res.status})`);
@@ -517,6 +522,11 @@ async function startPlan() {
         });
 
         if (!res.ok) {
+            if (res.status === 429) {
+                const err = await res.json().catch(() => ({}));
+                showTokenLimitPanel(err.detail);
+                throw new Error(err.detail?.message || '免费 Token 额度已用尽');
+            }
             if (res.status === 401) { logout(); throw new Error('登录已过期'); }
             const err = await res.json().catch(() => ({}));
             throw new Error(err.detail || `请求失败 (${res.status})`);
@@ -854,6 +864,38 @@ function boot() {
     } else {
         showAuth();
     }
+
+    // Token limit panel close
+    document.getElementById('btnCloseTokenLimit')?.addEventListener('click', closeTokenLimitPanel);
+    document.getElementById('btnCloseTokenLimitFooter')?.addEventListener('click', closeTokenLimitPanel);
+    document.getElementById('tokenLimitOverlay')?.addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeTokenLimitPanel();
+    });
+}
+
+// —— Token 限额提示面板 ——
+function showTokenLimitPanel(detail) {
+    const overlay = document.getElementById('tokenLimitOverlay');
+    const detailsEl = document.getElementById('tokenLimitDetails');
+    if (!overlay) return;
+    if (detail && detail.used_prompt !== undefined) {
+        detailsEl.innerHTML =
+            '<div class="limit-row"><span class="label">今日已用输入 Token</span><span class="value over">' +
+            (detail.used_prompt || 0).toLocaleString() + '</span></div>' +
+            '<div class="limit-row"><span class="label">今日已用输出 Token</span><span class="value over">' +
+            (detail.used_completion || 0).toLocaleString() + '</span></div>' +
+            '<div class="limit-row"><span class="label">每日输入 Token 限额</span><span class="value">' +
+            (detail.limit_prompt || 200000).toLocaleString() + '</span></div>' +
+            '<div class="limit-row"><span class="label">每日输出 Token 限额</span><span class="value">' +
+            (detail.limit_output || 200000).toLocaleString() + '</span></div>';
+    } else {
+        detailsEl.innerHTML = '<p style="color:#909399;text-align:center;margin:0;">详情暂不可用</p>';
+    }
+    overlay.classList.add('active');
+}
+function closeTokenLimitPanel() {
+    const overlay = document.getElementById('tokenLimitOverlay');
+    if (overlay) overlay.classList.remove('active');
 }
 
 boot();

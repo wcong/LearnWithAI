@@ -216,6 +216,23 @@
     </div>
 </div>
 
+<!-- ====== Token 限额提示面板 ====== -->
+<div class="token-limit-overlay" id="tokenLimitOverlay">
+    <div class="token-limit-modal">
+        <div class="token-limit-header">
+            <span class="token-limit-label">⚠️ 免费 Token 额度已用尽</span>
+            <button class="token-limit-close" id="btnCloseTokenLimit">✕</button>
+        </div>
+        <div class="token-limit-body" id="tokenLimitBody">
+            <p style="font-size:15px;color:#333;margin-bottom:16px;">您今日的免费 Token 额度已用尽，请明天再来。</p>
+            <div id="tokenLimitDetails" class="token-limit-details"></div>
+        </div>
+        <div class="token-limit-footer">
+            <button class="token-limit-btn" id="btnCloseTokenLimitFooter">我知道了</button>
+        </div>
+    </div>
+</div>
+
 <!-- 本地库 -->
 <script src="/static/js/lib/marked.min.js"></script>
 <script src="/static/js/plan.js"></script>

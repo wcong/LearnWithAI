@@ -51,7 +51,16 @@ function createSSEConnection(options) {
     enableChunked: true,
     enableHttp2: true,
     responseType: 'arraybuffer',
-    success() {
+    success(res) {
+      // 检查 429（token 耗尽）
+      if (res && res.statusCode === 429) {
+        const detail = typeof res.data === 'object' ? res.data?.detail : null
+        const msg = detail?.message || '今日免费 Token 额度已用尽，请明天再来'
+        wx.showModal({ title: '⚠️ 额度用尽', content: msg, showCancel: false })
+        onError && onError(msg)
+        onComplete && onComplete()
+        return
+      }
       // 流正常结束
       if (!aborted) {
         onComplete && onComplete()

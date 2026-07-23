@@ -682,6 +682,11 @@ async function sendMessage() {
         });
 
         if (!res.ok) {
+            if (res.status === 429) {
+                const err = await res.json().catch(() => ({}));
+                showTokenLimitPanel(err.detail);
+                throw new Error(err.detail?.message || '免费 Token 额度已用尽');
+            }
             if (res.status === 401) { logout(); showAuth(); throw new Error('登录已过期'); }
             const err = await res.json().catch(() => ({}));
             throw new Error(err.detail || `请求失败 (${res.status})`);
@@ -1147,6 +1152,12 @@ async function examineArea(areaId, areaName) {
         });
 
         if (!res.ok) {
+            if (res.status === 429) {
+                const err = await res.json().catch(() => ({}));
+                showTokenLimitPanel(err.detail);
+                throw new Error(err.detail?.message || '免费 Token 额度已用尽');
+            }
+            if (res.status === 401) { logout(); showAuth(); throw new Error('登录已过期'); }
             const err = await res.json().catch(() => ({}));
             throw new Error(err.detail || `请求失败 (${res.status})`);
         }
@@ -1317,6 +1328,11 @@ async function generateSubareas(areaId) {
         });
 
         if (!res.ok) {
+            if (res.status === 429) {
+                const err = await res.json().catch(() => ({}));
+                showTokenLimitPanel(err.detail);
+                throw new Error(err.detail?.message || '免费 Token 额度已用尽');
+            }
             if (res.status === 401) { logout(); showAuth(); throw new Error('登录已过期'); }
             const err = await res.json().catch(() => ({}));
             throw new Error(err.detail || `请求失败 (${res.status})`);

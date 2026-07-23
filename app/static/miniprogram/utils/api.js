@@ -53,6 +53,12 @@ function request(method, path, data = null, options = {}) {
           reject(new Error('登录已过期，请重新登录'))
           return
         }
+        if (res.statusCode === 429) {
+          const msg = res.data?.detail?.message || '今日免费 Token 额度已用尽，请明天再来'
+          wx.showModal({ title: '⚠️ 额度用尽', content: msg, showCancel: false })
+          reject(new Error(msg))
+          return
+        }
         if (res.statusCode >= 200 && res.statusCode < 300) {
           resolve(res.data)
         } else {
@@ -97,9 +103,17 @@ function streamRequest(path, body, handlers) {
       enableQuic: true,
       responseType: 'text',
       success(res) {
-        if (!isResolved && res.statusCode >= 200 && res.statusCode < 300) {
+        if (!isResolved) {
           isResolved = true
-          resolve(res.data)
+          if (res.statusCode === 429) {
+            const msg = res.data?.detail?.message || '今日免费 Token 额度已用尽，请明天再来'
+            wx.showModal({ title: '⚠️ 额度用尽', content: msg, showCancel: false })
+            reject(new Error(msg))
+          } else if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve(res.data)
+          } else {
+            reject(new Error(res.data?.detail || `请求失败(${res.statusCode})`))
+          }
         }
       },
       fail(err) {
