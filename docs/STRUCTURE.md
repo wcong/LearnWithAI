@@ -39,7 +39,7 @@ LearnWithAI/
 │   │   └── admin.py              # Admin statistics dashboard
 │   │
 │   └── static/                   # Frontend files
-│       ├── home.html             # Home page (navigation cards)
+│       ├── index.html            # Home page (navigation cards)
 │       ├── domain.html           # Domain page (3-column layout)
 │       ├── notes.html            # Notes page (2-column layout)
 │       ├── plan.html             # Plan Mode page
@@ -96,7 +96,7 @@ The application entry point that:
 4. Mounts static files at `/static`
 5. Registers all API routers
 6. Serves frontend pages via redirect routes:
-   - `/` → `home.html`
+   - `/` → `index.html`
    - `/domain` → `domain.html`
    - `/notes` → `notes.html`
    - `/plan` → `plan.html`
@@ -268,7 +268,7 @@ Support for OpenAI, Ollama, and Anthropic embeddings (Anthropic falls back to ke
 
 | Page | Path | Description |
 |------|------|-------------|
-| **Home** | `/static/home.html` | Navigation cards for all features |
+| **Home** | `/static/index.html` | Navigation cards for all features |
 | **Domains** | `/static/domain.html` | 3-column: domain tree (left), chat (center), tools panel (right) |
 | **Notes** | `/static/notes.html` | 2-column: domain tree (left), Quill rich text editor (right) |
 | **Plan** | `/static/plan.html` | Single-page: input domain → real-time SSE exploration progress |

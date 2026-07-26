@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>领域管理 – 探知</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/nav.css">
+    <style>
+        /* ========== 页面布局 ========== */
+        .am-page { display:flex; flex-direction:column; height:100vh; width:100vw; overflow:hidden; }
+        .am-container { flex:1; overflow-y:auto; padding:24px 32px; background:#f5f7fa; }
+
+        /* ========== 顶部操作栏 ========== */
+        .am-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:12px; flex-wrap:wrap; }
+        .am-header h2 { font-size:18px; font-weight:600; color:#303133; margin:0; display:flex; align-items:center; gap:8px; }
+        .am-header-actions { display:flex; align-items:center; gap:10px; }
+        .am-btn {
+            padding:7px 16px; border-radius:6px; font-size:13px; cursor:pointer;
+            transition:all .2s; font-family:inherit; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;
+        }
+        .am-btn-secondary {
+            background:#fff; border:1px solid #dcdfe6; color:#606266;
+        }
+        .am-btn-secondary:hover { border-color:#409eff; color:#409eff; }
+        .am-btn-danger {
+            background:#f56c6c; border:1px solid #f56c6c; color:#fff;
+        }
+        .am-btn-danger:hover { background:#ef4444; border-color:#ef4444; }
+        .am-btn-danger:disabled { background:#fab6b6; border-color:#fab6b6; cursor:not-allowed; }
+
+        /* ========== 树卡片 ========== */
+        .am-tree-card {
+            background:#fff; border:1px solid #eef0f4; border-radius:10px;
+            overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.04);
+        }
+
+        /* ========== 树表格 ========== */
+        .am-tree-table { min-height:100px; }
+        .am-tree-header {
+            display:flex; align-items:center; gap:10px; padding:12px 16px;
+            background:#f8f9fc; border-bottom:1px solid #eef0f4; font-size:12px; color:#606266;
+        }
+        .am-tree-row {
+            display:flex; align-items:center; gap:10px; padding:10px 16px;
+            border-bottom:1px solid #f2f4f8; font-size:13px; color:#303133;
+            transition:background .15s;
+        }
+        .am-tree-row:last-child { border-bottom:none; }
+        .am-tree-row:hover { background:#f8faff; }
+
+        /* 已 Pin 行高亮 */
+        .am-row-pinned { background:#ecf5ff !important; border-left:3px solid #409eff; padding-left:13px; }
+
+        /* 列宽控制 */
+        .am-node-name { flex:0 0 200px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .am-node-desc { flex:1; color:#909399; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+        .am-desc-empty { color:#dcdfe6; }
+        .am-node-time { flex:0 0 90px; color:#c0c4cc; font-size:11px; text-align:right; white-space:nowrap; }
+
+        /* 展开/折叠箭头 */
+        .am-arrow { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; font-size:10px; flex-shrink:0; }
+        .am-arrow-btn { cursor:pointer; user-select:none; }
+        .am-arrow-btn:hover { color:#409eff; }
+        .am-arrow-invisible { visibility:hidden; }
+
+        /* 复选框 */
+        .am-checkbox { cursor:pointer; width:15px; height:15px; flex-shrink:0; accent-color:#409eff; }
+
+        /* Pin 按钮 */
+        .am-pin-btn {
+            background:none; border:none; cursor:pointer; font-size:14px; padding:2px;
+            display:inline-flex; align-items:center; justify-content:center;
+            transition:transform .2s; flex-shrink:0; line-height:1;
+            opacity:0.4; filter:grayscale(1);
+        }
+        .am-pin-btn:hover { opacity:0.8; transform:scale(1.15); }
+        .am-pin-btn.am-pinned { opacity:1; filter:none; }
+        .am-pin-btn.am-pinned:hover { opacity:0.7; }
+        .am-pin-btn-placeholder { width:20px; flex-shrink:0; }
+
+        /* 空状态 / 错误 / 加载 */
+        .am-empty { text-align:center; color:#c0c4cc; padding:80px 20px; font-size:14px; }
+        .am-error { text-align:center; color:#ef4444; padding:80px 20px; font-size:14px; }
+        .am-loading { text-align:center; color:#909399; padding:80px 20px; font-size:14px; }
+        .am-link { color:#409eff; text-decoration:none; }
+        .am-link:hover { text-decoration:underline; }
+
+        /* 响应式 */
+        @media (max-width:800px) {
+            .am-container { padding:16px; }
+            .am-node-name { flex:0 0 140px; }
+            .am-node-time { display:none; }
+            .am-tree-row { flex-wrap:wrap; gap:6px; }
+        }
+    </style>
+</head>
+<body class="app-page">
+    <div class="am-page">
+        <!-- 顶部导航栏 -->
+        <header class="page-header">
+            <div class="header-left">
+                <a href="/static/index.html" class="header-logo" title="返回首页"><img src="/static/images/logo_180.png" class="header-logo-img" alt="探知"> 探知</a>
+            </div>
+            <nav class="header-nav">
+                <a href="/domain" class="nav-link">📚 <span class="nav-icon-text">学习领域</span></a>
+                <a href="/notes" class="nav-link">📝 <span class="nav-icon-text">学习笔记</span></a>
+                <a href="/static/skills.html" class="nav-link">⚙️ <span class="nav-icon-text">技能管理</span></a>
+                <a href="/plans" class="nav-link">✅ <span class="nav-icon-text">学习计划</span></a>
+                <a href="/plan" class="nav-link">💡 <span class="nav-icon-text">AI 规划</span></a>
+                <a href="/plan-checkpoints" class="nav-link">📋 <span class="nav-icon-text">Plan 检查点</span><span class="nav-badge">管理</span></a>
+                <a href="/area-manage" class="nav-link active">🗂️ <span class="nav-icon-text">领域管理</span><span class="nav-badge" style="background:linear-gradient(135deg,#409eff,#6366f1);">管理</span></a>
+            </nav>
+            <div class="header-right">
+                <span class="user-badge" id="amUserBadge"></span>
+                <button class="logout-btn" id="logoutBtn" title="退出登录">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    <span>退出</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- 主内容 -->
+        <div class="am-container">
+            <div class="am-header">
+                <h2>🗂️ 领域管理</h2>
+                <div class="am-header-actions">
+                    <button class="am-btn am-btn-secondary" id="amRefreshBtn">🔄 刷新</button>
+                    <button class="am-btn am-btn-secondary" id="amPromoteBtn" disabled>⬆️ 提升为顶级领域</button>
+                    <button class="am-btn am-btn-danger" id="amDeleteBtn" disabled>🗑️ 删除选中</button>
+                </div>
+            </div>
+
+            <div class="am-tree-card">
+                <div id="amTreeBody">
+                    <div class="am-loading">加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/area-manage.js"></script>
+</body>
+</html>

@@ -3,257 +3,100 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>探知 – AI 辅助深度学习</title>
-    <!-- Quill.js 富文本编辑器 -->
-    <link href="/static/css/lib/quill.snow.css" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css">
+    <title>探知 – AI 辅助深度学习平台</title>
+    <link rel="stylesheet" href="/static/css/home.css">
 </head>
 <body>
+    <div class="home-page">
+        <!-- 顶部品牌区 -->
+        <header class="home-header">
+            <a href="/static/index.html" class="home-brand-link" title="返回首页">
+                <div class="home-logo"><img src="/static/images/logo_180.png" class="home-logo-img" alt="探知"></div>
+                <h1 class="home-title">探知</h1>
+            </a>
+            <p class="home-subtitle">AI 辅助深度学习平台</p>
+        </header>
 
-<!-- ====== 登录页 ====== -->
-<div class="auth-page" id="authPage">
-    <div class="auth-card">
-        <div class="auth-logo"><img src="/static/images/logo_180.png" class="auth-logo-img" alt="探知"></div>
-        <h1>探知</h1>
-        <p class="auth-sub">AI 辅助深度学习平台</p>
-        <div class="auth-tabs">
-            <button class="auth-tab active" id="tabLogin">登录</button>
-            <button class="auth-tab" id="tabRegister">注册</button>
+        <!-- 导航卡片 -->
+        <div class="home-cards" id="homeCards">
+            <a href="/domain" class="home-card" id="cardDomain">
+                <div class="card-icon">📚</div>
+                <div class="card-title">学习领域</div>
+                <div class="card-desc">管理知识领域，与 AI 对话学习</div>
+            </a>
+            <a href="/notes" class="home-card" id="cardNotes">
+                <div class="card-icon">📝</div>
+                <div class="card-title">学习笔记</div>
+                <div class="card-desc">专注笔记编辑，随心记录知识</div>
+            </a>
+            <a href="/static/skills.html" class="home-card" id="cardSkills">
+                <div class="card-icon">⚙️</div>
+                <div class="card-title">技能管理</div>
+                <div class="card-desc">管理 AI 技能模板，定制学习助手</div>
+            </a>
+            <a href="/plans" class="home-card" id="cardPlans">
+                <div class="card-icon">✅</div>
+                <div class="card-title">学习计划</div>
+                <div class="card-desc">管理待办的学习计划，追踪学习进度</div>
+            </a>
+            <a href="/plan" class="home-card home-card-experimental" id="cardPlan">
+                <span class="card-badge">实验</span>
+                <div class="card-icon">💡</div>
+                <div class="card-title">AI 学习计划</div>
+                <div class="card-desc">AI 自动探索并规划学习路径</div>
+            </a>
+            <!-- 管理员卡片（仅 admin 用户显示，由 JS 控制显隐） -->
+            <a href="/plan-checkpoints" class="home-card" id="cardPlanCheckpoints" style="display:none;">
+                <span class="card-badge" style="background:linear-gradient(135deg,#6366f1,#409eff);">管理</span>
+                <div class="card-icon">📋</div>
+                <div class="card-title">Plan 检查点</div>
+                <div class="card-desc">浏览 LangGraph 检查点运行记录</div>
+            </a>
+            <!-- 领域管理卡片（仅 admin 用户显示） -->
+            <a href="/area-manage" class="home-card" id="cardAreaManage" style="display:none;">
+                <span class="card-badge" style="background:linear-gradient(135deg,#409eff,#6366f1);">管理</span>
+                <div class="card-icon">🗂️</div>
+                <div class="card-title">领域管理</div>
+                <div class="card-desc">管理领域树，批量操作与置顶</div>
+            </a>
         </div>
-        <!-- 登录/注册表单 -->
-        <form id="authForm" onsubmit="return false;">
-            <label>邮箱 / 用户名</label>
-            <input type="text" id="authEmail" placeholder="输入邮箱或用户名" required autocomplete="username">
-            <label>密码</label>
-            <input type="password" id="authPassword" placeholder="输入密码" required autocomplete="current-password">
-            <div id="authRegisterFields" style="display:none;">
-                <div id="authRegStep1">
-                    <button type="submit" formnovalidate class="auth-btn" id="authRegSendBtn" style="margin-bottom:10px;">发送验证码</button>
-                </div>
-                <div id="authRegStep2" style="display:none;">
-                    <label>验证码</label>
-                    <input type="text" id="authRegCode" placeholder="6 位数字验证码" maxlength="6">
-                    <label>密码</label>
-                    <input type="password" id="authRegPassword" placeholder="至少 4 个字符">
-                    <label>确认密码</label>
-                    <input type="password" id="authConfirmPassword" placeholder="再次输入密码">
-                    <label>昵称（选填）</label>
-                    <input type="text" id="authNickname" placeholder="显示名称">
-                </div>
-            </div>
-            <p class="auth-error" id="authError"></p>
-            <button type="submit" class="auth-btn" id="authBtn">登录</button>
-            <p class="auth-forgot-link" id="authForgotLink" style="margin-top:10px;text-align:center;font-size:12px;color:#909399;cursor:pointer;">忘记密码？</p>
-        </form>
-        <!-- 忘记密码面板 -->
-        <div id="authForgotPanel" style="display:none;">
-            <p style="text-align:center;font-size:14px;color:#606266;margin-bottom:16px;">重置密码</p>
-            <div id="authForgotStep1">
-                <label>邮箱</label>
-                <input type="email" id="authForgotEmail" placeholder="输入注册邮箱">
-                <p class="auth-error" id="authForgotError"></p>
-                <button type="button" class="auth-btn" id="authForgotSendBtn">发送验证码</button>
-            </div>
-            <div id="authForgotStep2" style="display:none;">
-                <label>验证码</label>
-                <input type="text" id="authForgotCode" placeholder="6 位数字验证码" maxlength="6">
-                <label>新密码</label>
-                <input type="password" id="authForgotNewPassword" placeholder="至少 4 个字符">
-                <p class="auth-error" id="authForgotResetError"></p>
-                <button type="button" class="auth-btn" id="authForgotResetBtn">重置密码</button>
-            </div>
-            <p class="auth-forgot-link" id="authForgotBack" style="margin-top:10px;text-align:center;font-size:12px;color:#409eff;cursor:pointer;">← 返回登录</p>
-        </div>
+
+        <!-- 底部状态 -->
+        <footer class="home-footer">
+            <span id="homeUserStatus">加载中...</span>
+        </footer>
     </div>
-</div>
 
-<!-- ====== 主应用（三栏） ====== -->
-<div class="app-container" id="appContainer" style="display:none;">
-    <!-- 左栏：领域树 -->
-    <aside class="area-tree-panel">
-        <div class="panel-header">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-                <h1>📚 学习领域</h1>
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <span class="username-badge" id="usernameBadge"></span>
-                    <a href="/static/skills.html" class="header-link-icon" title="技能管理">⚙️</a>
-                    <button class="icon-btn" id="btnAdmin" title="管理员面板">📊</button>
-                    <button class="logout-btn" id="logoutBtn" title="退出登录">🚪</button>
-                </div>
-            </div>
-            <p>管理你的知识领域</p>
-        </div>
-        <div class="list-toolbar">
-            <button id="btnNewRootArea">➕ 新建领域</button>
-            <button id="btnRagSearch">🔍 搜索笔记</button>
-        </div>
-        <div class="area-tree" id="areaTree"></div>
-    </aside>
-
-    <!-- 中栏：聊天 -->
-    <main class="chat-panel">
-        <div class="chat-area-info">
-            <div class="area-info-left">
-                <div class="area-title" id="areaTitle">请选择一个领域</div>
-                <div class="area-desc" id="areaDesc">点击左侧领域列表开始学习</div>
-            </div>
-            <button class="area-edit-btn" id="btnEditArea" style="display:none;" title="编辑领域">✏️</button>
-        </div>
-        <div class="chat-messages" id="chatMessages">
-            <div class="empty-chat">
-                <div class="icon">🌱</div>
-                <p>选择一个学习领域，开启 AI 引导的深度学习之旅</p>
-            </div>
-        </div>
-        <!-- AI Thinking 实时展示面板 -->
-        <div class="thinking-panel" id="thinkingPanel" style="display:none;">
-            <div class="thinking-header" id="thinkingHeader">
-                <span class="thinking-icon" id="thinkingIcon">🤔</span>
-                <span class="thinking-title" id="thinkingTitle">AI 思考中...</span>
-                <button class="thinking-toggle" id="thinkingToggle" style="display:none;" title="收起">▼</button>
-            </div>
-            <div class="thinking-body" id="thinkingBody">
-                <div class="thinking-content" id="thinkingContent"></div>
-            </div>
-        </div>
-        <div class="chat-input-area">
-            <div class="skill-toolbar">
-                <select id="skillSelect" class="skill-select">
-                    <option value="">无 Skill</option>
-                </select>
-                <a href="/static/skills.html" class="skill-manage-link" title="管理技能">⚙️</a>
-            </div>
-            <div class="chat-input-row">
-                <textarea id="chatInput" rows="1" placeholder="选择左侧领域后开始提问..." disabled></textarea>
-                <button id="sendBtn" disabled>发送</button>
-            </div>
-        </div>
-    </main>
-
-    <!-- 右栏：学习笔记 -->
-    <main class="note-panel">
-        <div class="note-header">
-            <div>
-                <span class="note-title" id="noteTitle">📝 学习笔记</span>
-                <span class="note-status" id="noteStatus"></span>
-            </div>
-            <div style="display:flex;gap:6px;">
-                <button class="note-btn" id="btnEditNote" style="display:none;">✏️ 编辑</button>
-                <button class="note-btn note-btn-primary" id="btnSaveNote" style="display:none;">💾 保存</button>
-            </div>
-        </div>
-        <div class="note-view" id="noteView"></div>
-        <div class="note-editor" id="noteEditor" style="display:none;"></div>
-    </main>
-</div>
-
-<!-- ====== 模态框 ====== -->
-<div class="modal-overlay" id="modalOverlay">
-    <div class="modal-box">
-        <h2 id="modalTitle">创建学习领域</h2>
-        <div id="modalForm"></div>
-    </div>
-</div>
-
-<div class="response-overlay" id="responseOverlay">
-    <div class="response-modal">
-        <div class="response-header">
-            <span class="response-label" id="responseLabel">AI 回复详情</span>
-            <button class="response-close" id="btnCloseResponse">✕</button>
-        </div>
-        <div class="response-body" id="responseBody"></div>
-    </div>
-</div>
-
-<!-- ====== RAG 搜索弹窗 ====== -->
-<div class="rag-search-overlay" id="ragSearchOverlay">
-    <div class="rag-search-modal">
-        <div class="rag-search-header">
-            <span class="rag-search-label">🔍 RAG 笔记搜索</span>
-            <button class="rag-search-close" id="btnCloseRagSearch">✕</button>
-        </div>
-        <div class="rag-search-body">
-            <div class="rag-search-input-row">
-                <input type="text" id="ragSearchInput" placeholder="输入关键词搜索你的笔记..." autofocus>
-                <button id="btnSubmitRagSearch">搜索</button>
-            </div>
-            <div class="rag-search-results" id="ragSearchResults">
-                <div class="rag-search-empty">输入查询内容后点击"搜索"</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ====== Token 限额提示面板 ====== -->
-<div class="token-limit-overlay" id="tokenLimitOverlay">
-    <div class="token-limit-modal">
-        <div class="token-limit-header">
-            <span class="token-limit-label">⚠️ 免费 Token 额度已用尽</span>
-            <button class="token-limit-close" id="btnCloseTokenLimit">✕</button>
-        </div>
-        <div class="token-limit-body" id="tokenLimitBody">
-            <p style="font-size:15px;color:#333;margin-bottom:16px;">您今日的免费 Token 额度已用尽，请明天再来。</p>
-            <div id="tokenLimitDetails" class="token-limit-details"></div>
-        </div>
-        <div class="token-limit-footer">
-            <button class="token-limit-btn" id="btnCloseTokenLimitFooter">我知道了</button>
-        </div>
-    </div>
-</div>
-
-<!-- ====== Admin 统计面板 ====== -->
-<div class="admin-overlay" id="adminOverlay">
-    <div class="admin-modal">
-        <div class="admin-header">
-            <span class="admin-label">📊 管理面板</span>
-            <div class="admin-header-actions">
-                <button class="admin-refresh-btn" id="btnAdminRefresh">🔄 刷新</button>
-                <button class="admin-close" id="btnCloseAdmin">✕</button>
-            </div>
-        </div>
-        <div class="admin-tabs">
-            <button class="admin-tab active" data-tab="stats">📈 统计</button>
-            <button class="admin-tab" data-tab="tokens">🔐 Token 限额</button>
-        </div>
-        <div class="admin-body" id="adminBody">
-            <div class="admin-loading">加载中...</div>
-        </div>
-    </div>
-</div>
-
-<!-- ====== 子领域审查结果模态框 ====== -->
-<div class="examine-overlay" id="examineOverlay">
-    <div class="examine-modal">
-        <div class="examine-header">
-            <span class="examine-label" id="examineLabel">🔍 审查子领域</span>
-            <button class="examine-close" id="btnCloseExamine">✕</button>
-        </div>
-        <div class="examine-body" id="examineBody">
-            <div class="examine-loading">⏳ AI 正在分析子领域...</div>
-        </div>
-    </div>
-</div>
-
-<!-- ====== 生成子领域模态框 ====== -->
-<div class="gen-overlay" id="genOverlay">
-    <div class="gen-modal">
-        <div class="gen-header">
-            <span class="gen-label">✨ 生成子领域</span>
-            <button class="gen-close" id="btnCloseGen">✕</button>
-        </div>
-        <div class="gen-body" id="genBody">
-            <div class="gen-loading">⏳ AI 正在根据聊天内容生成子领域建议...</div>
-        </div>
-    </div>
-</div>
-
-<!-- highlight.js 代码语法高亮 -->
-<link rel="stylesheet" href="/static/css/lib/atom-one-dark.min.css">
-<script src="/static/js/lib/highlight.min.js"></script>
-
-<!-- 本地库 -->
-<script src="/static/js/lib/quill.js"></script>
-<script src="/static/js/lib/marked.min.js"></script>
-<script src="/static/js/app.js"></script>
+    <script>
+        // 检测登录状态，显示用户信息
+        const token = localStorage.getItem('token') || '';
+        const saved = localStorage.getItem('user');
+        const statusEl = document.getElementById('homeUserStatus');
+        if (token && saved) {
+            try {
+                const user = JSON.parse(saved);
+                statusEl.textContent = '👋 欢迎回来，' + user.username;
+                // 检查管理员权限，显示管理员卡片
+                (async () => {
+                    try {
+                        const res = await fetch('/api/admin/check', {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data.is_admin) {
+                                document.getElementById('cardPlanCheckpoints').style.display = '';
+                                document.getElementById('cardAreaManage').style.display = '';
+                            }
+                        }
+                    } catch {}
+                })();
+            } catch {
+                statusEl.textContent = '🌱 登录以开始学习之旅';
+            }
+        } else {
+            statusEl.textContent = '🌱 登录以开始学习之旅';
+        }
+    </script>
 </body>
 </html>

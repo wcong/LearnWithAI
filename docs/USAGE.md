@@ -40,7 +40,7 @@ Each login records the IP address (masked), user-agent, and geographic location 
 
 ## 2. Home Page Navigation
 
-After logging in, the home page (`/static/home.html`) shows four navigation cards:
+After logging in, the home page (`/static/index.html`) shows four navigation cards:
 
 | Card | Description |
 |------|-------------|

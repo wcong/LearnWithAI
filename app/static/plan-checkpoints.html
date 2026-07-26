@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan 检查点 – 探知</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/nav.css">
+    <style>
+        .pc-page { display:flex; flex-direction:column; height:100vh; width:100vw; overflow:hidden; }
+        .pc-container { flex:1; overflow-y:auto; padding:24px 32px; background:#f5f7fa; }
+        .pc-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+        .pc-header h2 { font-size:18px; font-weight:600; color:#303133; }
+        .pc-refresh-btn { padding:6px 14px; border:1px solid #dcdfe6; border-radius:6px; background:#fff; font-size:13px; cursor:pointer; transition:all .2s; color:#606266; }
+        .pc-refresh-btn:hover { border-color:#409eff; color:#409eff; }
+        .pc-summary { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:14px; margin-bottom:24px; }
+        .pc-card { background:#fff; border:1px solid #eef0f4; border-radius:10px; padding:18px 20px; text-align:center; }
+        .pc-card-value { font-size:24px; font-weight:700; color:#303133; line-height:1.2; }
+        .pc-card-label { font-size:12px; color:#909399; margin-top:4px; }
+        .pc-card-primary { background:#ecf5ff; border-color:#d9e6ff; }
+        .pc-card-primary .pc-card-value { color:#409eff; }
+        .pc-table { width:100%; border-collapse:collapse; font-size:13px; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.04); }
+        .pc-table th { background:#f5f7fa; padding:12px 14px; text-align:left; font-weight:600; color:#606266; border-bottom:1px solid #eef0f4; white-space:nowrap; font-size:12px; }
+        .pc-table td { padding:12px 14px; border-bottom:1px solid #f2f4f8; color:#303133; vertical-align:top; }
+        .pc-table tbody tr { cursor:pointer; transition:background .15s; }
+        .pc-table tbody tr:hover { background:#f8faff; }
+        .pc-table tbody tr:last-child td { border-bottom:none; }
+        .pc-depth-badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:600; color:#fff; }
+        .pc-status-done { color:#67c23a; font-weight:500; }
+        .pc-status-pending { color:#f59e0b; font-weight:500; }
+        .pc-overview-cell { max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#909399; font-size:12px; }
+        .pc-overview-expanded { white-space:normal; word-break:break-word; background:#f8faff; }
+        .pc-preview-row td { padding:0 14px 12px !important; background:#f8faff; }
+        .pc-preview-content { font-size:12px; color:#606266; line-height:1.7; max-height:140px; overflow-y:auto; border:1px solid #eef0f4; border-radius:6px; padding:12px; background:#fff; white-space:pre-wrap; word-break:break-word; }
+        .pc-empty { text-align:center; color:#c0c4cc; padding:80px 0; font-size:14px; }
+        .pc-error { text-align:center; color:#ef4444; padding:80px 0; font-size:14px; }
+        .pc-loading { text-align:center; color:#909399; padding:80px 0; font-size:14px; }
+        .pc-thread-id { font-size:11px; color:#c0c4cc; font-family:monospace; }
+
+        /* ── 检查点详情面板 ── */
+        .pc-detail-row td { padding:0 !important; background:#f0f2f5; }
+        .pc-detail-container { padding:20px 24px; }
+        .pc-detail-header { margin-bottom:16px; }
+        .pc-detail-title { font-size:15px; font-weight:600; color:#303133; margin-bottom:6px; }
+        .pc-detail-meta { display:flex; flex-wrap:wrap; gap:12px; font-size:12px; color:#909399; align-items:center; }
+        .pc-detail-meta-item { white-space:nowrap; }
+        .pc-detail-raw-link { font-size:12px; color:#409eff; text-decoration:none; margin-left:auto; }
+        .pc-detail-raw-link:hover { text-decoration:underline; }
+        .pc-detail-loading, .pc-detail-error { padding:20px; text-align:center; color:#909399; font-size:14px; }
+        .pc-detail-error { color:#ef4444; }
+        .pc-row-expanded { background:#e8f0fe !important; }
+
+        /* 检查点卡片 */
+        .pc-cp-card { background:#fff; border:1px solid #e4e7ed; border-radius:8px; margin-bottom:10px; overflow:hidden; box-shadow:0 1px 2px rgba(0,0,0,.03); }
+        .pc-cp-card-header { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; cursor:pointer; user-select:none; transition:background .15s; }
+        .pc-cp-card-header:hover { background:#f8faff; }
+        .pc-cp-card-title { display:flex; align-items:center; gap:8px; flex:1; min-width:0; }
+        .pc-cp-step-badge { display:inline-block; padding:1px 8px; border-radius:8px; font-size:11px; font-weight:600; background:#409eff; color:#fff; white-space:nowrap; }
+        .pc-cp-source-badge { display:inline-block; padding:1px 8px; border-radius:8px; font-size:11px; font-weight:500; white-space:nowrap; }
+        .pc-cp-source-input { background:#e6f7ff; color:#1890ff; }
+        .pc-cp-source-loop { background:#f6ffed; color:#52c41a; }
+        .pc-cp-source-fork { background:#fff7e6; color:#fa8c16; }
+        .pc-cp-id { font-size:11px; color:#c0c4cc; font-family:monospace; }
+        .pc-cp-card-meta { display:flex; align-items:center; gap:12px; font-size:11px; color:#909399; margin-left:12px; white-space:nowrap; }
+        .pc-cp-card-meta code { font-size:10px; color:#c0c4cc; }
+        .pc-cp-toggle-icon { font-size:10px; color:#c0c4cc; transition:transform .2s; }
+        .pc-cp-card-body { padding:0 16px 14px; border-top:1px solid #f0f2f5; }
+        .pc-cp-section { margin-top:10px; }
+        .pc-cp-section-title { font-size:12px; font-weight:600; color:#606266; margin-bottom:6px; }
+
+        /* channel values / writes 表格 */
+        .pc-cp-table { width:100%; border-collapse:collapse; font-size:12px; background:#fafbfc; border-radius:6px; overflow:hidden; }
+        .pc-cp-table td { padding:6px 10px; border-bottom:1px solid #f0f2f5; vertical-align:top; }
+        .pc-cp-table tr:last-child td { border-bottom:none; }
+        .pc-cp-key { width:180px; font-weight:600; color:#409eff; font-family:monospace; font-size:11px; white-space:nowrap; }
+        .pc-cp-val { color:#303133; font-family:monospace; font-size:11px; word-break:break-all; line-height:1.5; }
+        .pc-cp-null { color:#c0c4cc; font-style:italic; }
+        .pc-cp-bool { color:#67c23a; font-weight:500; }
+        .pc-cp-num { color:#f59e0b; font-weight:500; }
+        .pc-cp-pre { margin:0; white-space:pre-wrap; word-break:break-word; font-family:monospace; font-size:11px; line-height:1.5; max-height:200px; overflow-y:auto; background:#f5f7fa; padding:6px 8px; border-radius:4px; }
+        .pc-cp-task-id { display:inline-block; margin-left:8px; font-size:10px; color:#c0c4cc; font-style:italic; }
+    </style>
+</head>
+<body class="app-page">
+    <div class="pc-page">
+        <!-- 顶部导航栏 -->
+        <header class="page-header">
+            <div class="header-left">
+                <a href="/static/index.html" class="header-logo" title="返回首页"><img src="/static/images/logo_180.png" class="header-logo-img" alt="探知"> 探知</a>
+            </div>
+            <nav class="header-nav">
+                <a href="/domain" class="nav-link">📚 <span class="nav-icon-text">学习领域</span></a>
+                <a href="/notes" class="nav-link">📝 <span class="nav-icon-text">学习笔记</span></a>
+                <a href="/static/skills.html" class="nav-link">⚙️ <span class="nav-icon-text">技能管理</span></a>
+                <a href="/plans" class="nav-link">✅ <span class="nav-icon-text">学习计划</span></a>
+                <a href="/plan" class="nav-link">💡 <span class="nav-icon-text">AI 规划</span></a>
+                <a href="/plan-checkpoints" class="nav-link">📋 <span class="nav-icon-text">Plan 检查点</span><span class="nav-badge">管理</span></a>
+                <a href="/area-manage" class="nav-link active">🗂️ <span class="nav-icon-text">领域管理</span><span class="nav-badge" style="background:linear-gradient(135deg,#409eff,#6366f1);">管理</span></a>
+            </nav>
+            <div class="header-right">
+                <span class="user-badge" id="pcUserBadge"></span>
+                <button class="logout-btn" id="logoutBtn" title="退出登录">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    <span>退出</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- 主内容 -->
+        <div class="pc-container">
+            <div class="pc-header">
+                <h2>📋 Plan 检查点分析</h2>
+                <button class="pc-refresh-btn" id="pcRefreshBtn">🔄 刷新</button>
+            </div>
+            <div id="pcBody">
+                <div class="pc-loading">加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/plan-checkpoints.js"></script>
+</body>
+</html>

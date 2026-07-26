@@ -47,6 +47,15 @@ class Settings:
     WECHAT_APPID = os.getenv("WECHAT_APPID", "")
     WECHAT_SECRET = os.getenv("WECHAT_SECRET", "")
 
+    # Langfuse 可观测性配置（可选，未配置时不启用）
+    LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY", "")
+    LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY", "")
+    LANGFUSE_BASE_URL = os.getenv("LANGFUSE_BASE_URL", "https://cloud.langfuse.com")
+
+    # Plan 检查点数据库（MySQL 连接串，设置此项则使用 MySQL 替代 SQLite 存储 checkpoints）
+    # 格式: mysql://user:password@host:port/dbname
+    PLAN_CHECKPOINT_DB_URL = os.getenv("PLAN_CHECKPOINT_DB_URL", "")
+
     # 服务地址（用于密码重置链接/开发环境日志）
     BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:7860")
 

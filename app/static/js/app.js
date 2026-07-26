@@ -437,6 +437,7 @@ function bootApp() {
             document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             if (tab.dataset.tab === 'stats') loadAdminStats();
+            else if (tab.dataset.tab === 'plan-runs') loadAdminPlanRuns();
             else if (tab.dataset.tab === 'tokens') loadAdminTokenPanel();
         });
     });
@@ -513,11 +514,41 @@ function bootApp() {
 
 async function loadData() {
     try { treeData = await api('/areas/tree'); } catch { treeData = []; }
+
+    // 检查 URL 参数 ?select=areaId（来自计划页面的跳转）
+    const params = new URLSearchParams(window.location.search);
+    const selectId = params.get('select');
+    let targetNode = null;
+    if (selectId) {
+        targetNode = findNodeById(treeData, parseInt(selectId, 10));
+        if (targetNode) {
+            selectedAreaId = targetNode.id;
+            // 展开所有祖先节点
+            expandAncestors(treeData, targetNode.id);
+        }
+        // 清除 URL 参数，避免刷新时重复跳转
+        history.replaceState(null, '', window.location.pathname);
+    }
+
     renderTree(treeData);
     if (treeData.length > 0) {
         const still = selectedAreaId && findNodeById(treeData, selectedAreaId);
         selectArea(still || treeData[0]);
     } else { clearArea(); }
+}
+
+/** 展开目标节点的所有祖先结点 */
+function expandAncestors(roots, targetId) {
+    for (const r of roots) {
+        if (r.id === targetId) return true;
+        if (r.children && r.children.length > 0) {
+            if (expandAncestors(r.children, targetId)) {
+                _expanded[r.id] = true;  // 展开这个父节点
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 function renderTree(roots) {
@@ -1385,6 +1416,94 @@ function renderAdminStats(data, body) {
     }
 
     body.innerHTML = html;
+}
+
+// —— Admin Plan 运行记录面板 ——
+async function loadAdminPlanRuns() {
+    const body = document.getElementById('adminBody');
+    body.innerHTML = '<div class="admin-loading">加载中...</div>';
+    try {
+        const data = await api('/admin/plan-runs');
+        renderAdminPlanRuns(data, body);
+    } catch (err) {
+        body.innerHTML = `<div class="admin-loading" style="color:#ef4444;">⚠️ 加载失败：${escHtml(err.message)}</div>`;
+    }
+}
+
+function renderAdminPlanRuns(data, body) {
+    if (!data || data.length === 0) {
+        body.innerHTML = '<div class="admin-empty" style="padding:60px 0;">暂无 Plan 运行记录</div>';
+        return;
+    }
+
+    // 汇总统计
+    const totalRuns = data.length;
+    const totalAreas = data.reduce((s, r) => s + r.total_areas, 0);
+    const totalMsgs = data.reduce((s, r) => s + r.total_messages, 0);
+
+    let html = `
+        <div class="admin-summary">
+            <div class="admin-card"><div class="admin-card-value">${totalRuns}</div><div class="admin-card-label">运行次数</div></div>
+            <div class="admin-card"><div class="admin-card-value">${totalAreas}</div><div class="admin-card-label">总领域数</div></div>
+            <div class="admin-card admin-card-primary"><div class="admin-card-value">${totalMsgs.toLocaleString()}</div><div class="admin-card-label">总消息数</div></div>
+        </div>
+    `;
+
+    // 表格
+    html += '<table class="admin-table"><thead><tr>' +
+        '<th>#</th><th>主题</th><th>用户</th><th>领域</th><th>深度</th><th>消息</th><th>步骤</th><th>状态</th><th>开始时间</th>' +
+        '</tr></thead><tbody>';
+
+    data.forEach((r, i) => {
+        const time = r.start_time || '-';
+        const depthColor = r.max_depth >= 5 ? '#ef4444' : r.max_depth >= 3 ? '#f59e0b' : '#67c23a';
+        const statusIcon = r.finished ? '✅' : '⏳';
+        const statusText = r.finished ? '完成' : '进行中';
+
+        const hasPreview = !!r.overview_preview;
+        const previewId = `preview_${i}`;
+        html += `<tr data-preview-id="${hasPreview ? previewId : ''}" style="${hasPreview ? 'cursor:pointer;' : ''}">
+            <td style="color:#909399;font-size:11px;">${i + 1}</td>
+            <td><strong>${escHtml(r.topic)}</strong></td>
+            <td>${escHtml(r.username)}</td>
+            <td>${r.total_areas}</td>
+            <td><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600;color:#fff;background:${depthColor};">L${r.max_depth}</span></td>
+            <td>${r.total_messages}</td>
+            <td style="color:#909399;font-size:12px;">${r.steps}</td>
+            <td><span title="${r.finished ? '运行完成' : '可能中断'}">${statusIcon} ${statusText}</span></td>
+            <td style="color:#909399;font-size:12px;white-space:nowrap;">${time}</td>
+        </tr>`;
+
+        // 如果有 overview 预览，添加一个可折叠详情行
+        if (hasPreview) {
+            html += `<tr class="plan-preview-row" data-preview-id="${previewId}" style="display:none;">
+                <td colspan="9" style="padding:8px 12px 12px 12px;background:#f8faff;">
+                    <div style="font-size:12px;color:#606266;line-height:1.6;max-height:120px;overflow-y:auto;border:1px solid #eef0f4;border-radius:6px;padding:10px;background:#fff;">
+                        ${escHtml(r.overview_preview)}
+                    </div>
+                </td>
+            </tr>`;
+        }
+    });
+
+    html += '</tbody></table>';
+
+    body.innerHTML = html;
+
+    // 点击行展开/收起 overview 预览
+    body.querySelectorAll('.admin-table tbody tr').forEach(row => {
+        if (row.classList.contains('plan-preview-row')) return;
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', () => {
+            const previewId = row.dataset.previewId;
+            if (previewId) {
+                const previewRow = body.querySelector(`tr[data-preview-id="${previewId}"]`);
+                if (previewRow) {
+                    previewRow.style.display = previewRow.style.display === 'none' ? '' : 'none';
+                }
+            }
+        });
+    });
 }
 
 // —— Admin Token 限额管理面板 ——

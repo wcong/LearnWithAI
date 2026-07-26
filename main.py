@@ -27,7 +27,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.database import init_db, get_db_type
-from app.routes import areas, chat, auth, notes, rag, admin, plan, skills
+from app.routes import areas, chat, auth, notes, rag, admin, plan, skills, study_plans
 
 # ── 日志配置 ──────────────────────────────
 logging.basicConfig(
@@ -100,13 +100,14 @@ app.include_router(rag.router)
 app.include_router(admin.router)
 app.include_router(plan.router)
 app.include_router(skills.router)
+app.include_router(study_plans.router)
 
 
 @app.get("/")
 async def root():
     """重定向到新主页"""
     from fastapi.responses import RedirectResponse
-    return RedirectResponse(url="/static/home.html")
+    return RedirectResponse(url="/static/index.html")
 
 
 @app.get("/domain")
@@ -128,6 +129,27 @@ async def plan_page():
     """Plan Mode 深度学习规划页面"""
     from fastapi.responses import RedirectResponse
     return RedirectResponse(url="/static/plan.html")
+
+
+@app.get("/plan-checkpoints")
+async def plan_checkpoints_page():
+    """Plan 检查点分析页面（管理员）"""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/static/plan-checkpoints.html")
+
+
+@app.get("/area-manage")
+async def area_manage_page():
+    """领域管理页面（管理员）"""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/static/area-manage.html")
+
+
+@app.get("/plans")
+async def plans_page():
+    """学习计划页面（代办事项）"""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/static/plans.html")
 
 
 @app.get("/mobile")

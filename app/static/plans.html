@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>技能管理 – 探知</title>
-    <link rel="stylesheet" href="/static/css/skills.css">
+    <title>学习计划 – 探知</title>
+    <link rel="stylesheet" href="/static/css/plans.css">
     <link rel="stylesheet" href="/static/css/nav.css">
 </head>
 <body>
@@ -14,12 +14,11 @@
     <div class="auth-card">
         <div class="auth-logo"><img src="/static/images/logo_180.png" class="auth-logo-img" alt="探知"></div>
         <h1>探知</h1>
-        <p class="auth-sub">技能管理</p>
+        <p class="auth-sub">学习计划</p>
         <div class="auth-tabs">
             <button class="auth-tab active" id="tabLogin">登录</button>
             <button class="auth-tab" id="tabRegister">注册</button>
         </div>
-        <!-- 登录/注册表单 -->
         <form id="authForm" onsubmit="return false;">
             <label>邮箱 / 用户名</label>
             <input type="text" id="authEmail" placeholder="输入邮箱或用户名" required autocomplete="username">
@@ -44,7 +43,6 @@
             <button type="submit" class="auth-btn" id="authBtn">登录</button>
             <p class="auth-forgot-link" id="authForgotLink" style="margin-top:10px;text-align:center;font-size:12px;color:#909399;cursor:pointer;">忘记密码？</p>
         </form>
-        <!-- 忘记密码面板 -->
         <div id="authForgotPanel" style="display:none;">
             <p style="text-align:center;font-size:14px;color:#606266;margin-bottom:16px;">重置密码</p>
             <div id="authForgotStep1">
@@ -76,8 +74,8 @@
         <nav class="header-nav">
             <a href="/domain" class="nav-link" data-page="domain">📚 <span class="nav-icon-text">学习领域</span></a>
             <a href="/notes" class="nav-link" data-page="notes">📝 <span class="nav-icon-text">学习笔记</span></a>
-            <a href="/static/skills.html" class="nav-link active" data-page="skills">⚙️ <span class="nav-icon-text">技能管理</span></a>
-            <a href="/plans" class="nav-link" data-page="plans">✅ <span class="nav-icon-text">学习计划</span></a>
+            <a href="/static/skills.html" class="nav-link" data-page="skills">⚙️ <span class="nav-icon-text">技能管理</span></a>
+            <a href="/plans" class="nav-link active" data-page="plans">✅ <span class="nav-icon-text">学习计划</span></a>
             <a href="/plan" class="nav-link" data-page="plan">💡 <span class="nav-icon-text">AI 规划</span><span class="nav-badge">实验</span></a>
         </nav>
         <div class="header-right">
@@ -89,47 +87,74 @@
         </div>
     </header>
 
-    <!-- 主体 -->
-    <div class="page-body">
-        <!-- 左栏：全局技能 -->
-        <div class="skill-column">
-            <div class="column-header">
-                <span class="column-title">🌐 全局技能</span>
-                <button class="btn-primary btn-sm" id="btnCreateGlobal" style="display:none;">➕ 新建</button>
+    <!-- 计划页面主体 -->
+    <div class="plans-body">
+        <!-- 顶部统计栏 -->
+        <div class="plans-stats-bar">
+            <div class="stats-card stats-today" id="statsToday">
+                <div class="stats-num" id="statTodayNum">0</div>
+                <div class="stats-label">今日要学</div>
             </div>
-            <div class="column-body" id="globalSkillsList">
-                <div class="loading-text">加载中...</div>
+            <div class="stats-card stats-overdue" id="statsOverdue">
+                <div class="stats-num" id="statOverdueNum">0</div>
+                <div class="stats-label">已逾期</div>
             </div>
+            <div class="stats-card stats-total" id="statsTotal">
+                <div class="stats-num" id="statTotalNum">0</div>
+                <div class="stats-label">总计</div>
+            </div>
+            <button class="stats-completed-btn" id="btnCompleted">📋 查看已完成</button>
         </div>
 
-        <!-- 右栏：个人技能 -->
-        <div class="skill-column">
-            <div class="column-header">
-                <span class="column-title">👤 我的技能</span>
-                <button class="btn-primary btn-sm" id="btnCreatePersonal">➕ 新建</button>
-            </div>
-            <div class="column-body" id="personalSkillsList">
-                <div class="loading-text">加载中...</div>
-            </div>
+        <!-- 计划列表 -->
+        <div class="plans-list" id="plansList">
+            <div class="loading-text">加载中...</div>
+        </div>
+
+        <!-- 空状态提示（由 JS 动态展示） -->
+        <div class="plans-empty" id="plansEmpty" style="display:none;">
+            <div class="empty-icon">📋</div>
+            <div class="empty-text">暂无学习计划</div>
+            <div class="empty-hint">点击右下角 + 创建你的第一个计划</div>
         </div>
     </div>
+
+    <!-- 浮动新建按钮 -->
+    <button class="fab-btn" id="btnCreatePlan" title="新建计划">+</button>
 </div>
 
-<!-- ====== 编辑模态框 ====== -->
+<!-- ====== 创建/编辑计划模态框 ====== -->
 <div class="modal-overlay" id="editOverlay">
     <div class="modal-box">
         <div class="modal-header">
-            <span class="modal-title" id="editTitle">编辑技能</span>
+            <span class="modal-title" id="editTitle">新建学习计划</span>
             <button class="modal-close" id="btnCloseEdit">✕</button>
         </div>
         <div class="modal-body">
-            <label>技能名称 *</label>
-            <input type="text" id="editName" placeholder="例如：代码审查" required>
+            <label>计划标题 *</label>
+            <input type="text" id="editTitleInput" placeholder="例如：学习 React Hooks">
+
             <label>描述（选填）</label>
-            <input type="text" id="editDesc" placeholder="简要描述该技能的用途">
-            <label>提示词模板 *</label>
-            <textarea id="editTemplate" rows="6" placeholder="使用 {topic} 占位用户输入。例如：请帮我审查以下代码：\n\n{topic}"></textarea>
-            <p class="template-hint">💡 使用 <code>{topic}</code> 作为用户输入内容的占位符</p>
+            <textarea id="editDescInput" rows="3" placeholder="描述计划内容..."></textarea>
+
+            <label>计划时间 *</label>
+            <input type="datetime-local" id="editDateInput">
+
+            <label>关联领域（选填）</label>
+            <select id="editAreaSelect">
+                <option value="">— 不关联 —</option>
+            </select>
+
+            <div id="editParentField" style="display:none;">
+                <label>父计划</label>
+                <select id="editParentSelect" disabled>
+                    <option value="">— 顶级计划 —</option>
+                </select>
+            </div>
+
+            <input type="hidden" id="editPlanId" value="">
+            <input type="hidden" id="editParentId" value="">
+
             <div class="modal-actions">
                 <button id="btnEditCancel">取消</button>
                 <button class="btn-primary" id="btnEditSave">保存</button>
@@ -138,6 +163,36 @@
     </div>
 </div>
 
-<script src="/static/js/skills.js"></script>
+<!-- ====== 已完成计划弹窗 ====== -->
+<div class="completed-overlay" id="completedOverlay">
+    <div class="completed-modal">
+        <div class="completed-header">
+            <span class="completed-title">✅ 已完成计划</span>
+            <button class="completed-close" id="btnCloseCompleted">✕</button>
+        </div>
+        <div class="completed-body" id="completedBody">
+            <div class="loading-text">加载中...</div>
+        </div>
+    </div>
+</div>
+
+<!-- ====== 删除确认弹窗 ====== -->
+<div class="modal-overlay" id="deleteOverlay">
+    <div class="modal-box modal-box-sm">
+        <div class="modal-header">
+            <span class="modal-title">确认删除</span>
+            <button class="modal-close" id="btnCloseDelete">✕</button>
+        </div>
+        <div class="modal-body">
+            <p id="deleteConfirmText" style="margin-bottom:16px;">确认删除此计划？</p>
+            <div class="modal-actions">
+                <button id="btnDeleteCancel">取消</button>
+                <button class="btn-danger" id="btnDeleteConfirm">删除</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/plans.js"></script>
 </body>
 </html>

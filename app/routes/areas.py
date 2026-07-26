@@ -18,6 +18,7 @@ from app.agents.learning_agent import (
     run_polish_subareas,
 )
 from app.agents.streaming_handler import StreamingCallbackHandler
+from app.agents.langfuse_helper import create_langfuse_handler
 
 router = APIRouter(prefix="/api/areas", tags=["Learning Areas"])
 
@@ -33,6 +34,11 @@ class UpdateAreaRequest(BaseModel):
     name: str | None = None
     description: str | None = None
     order: int | None = None
+    is_pinned: bool | None = None
+
+
+class BatchDeleteRequest(BaseModel):
+    area_ids: list[int]
 
 
 def _assert_owner(area: Area, user: User):
@@ -43,7 +49,9 @@ def _assert_owner(area: Area, user: User):
 def _build_area_tree(area: Area, db: Session) -> dict:
     """递归构建 Area 树（纯 Python 手动查询）"""
     node = area.to_dict()
-    children = db.query(Area).filter(Area.parent_id == area.id).order_by(Area.order).all()
+    children = db.query(Area).filter(Area.parent_id == area.id).order_by(
+        Area.is_pinned.desc(), Area.order
+    ).all()
     node["children"] = [_build_area_tree(c, db) for c in children]
     return node
 
@@ -52,7 +60,7 @@ def _build_area_tree(area: Area, db: Session) -> dict:
 def get_tree(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     roots = db.query(Area).filter(
         Area.parent_id.is_(None), Area.user_id == user.id
-    ).order_by(Area.order).all()
+    ).order_by(Area.is_pinned.desc(), Area.order).all()
     return [_build_area_tree(r, db) for r in roots]
 
 
@@ -60,7 +68,7 @@ def get_tree(db: Session = Depends(get_db), user: User = Depends(get_current_use
 def list_areas(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     areas = db.query(Area).filter(
         Area.parent_id.is_(None), Area.user_id == user.id
-    ).order_by(Area.order).all()
+    ).order_by(Area.is_pinned.desc(), Area.order).all()
     return [_build_area_tree(a, db) for a in areas]
 
 
@@ -109,6 +117,8 @@ def update_area(area_id: int, body: UpdateAreaRequest,
         area.description = body.description
     if body.order is not None:
         area.order = body.order
+    if body.is_pinned is not None:
+        area.is_pinned = 1 if body.is_pinned else 0
     db.commit()
     db.refresh(area)
     return area.to_dict()
@@ -131,6 +141,54 @@ def _delete_area_recursive(area: Area, db: Session):
     for child in children:
         _delete_area_recursive(child, db)
     db.delete(area)
+
+
+@router.post("/batch-delete")
+def batch_delete_areas(body: BatchDeleteRequest, db: Session = Depends(get_db),
+                        user: User = Depends(get_current_user)):
+    """批量删除领域（递归删除每个及其子节点）"""
+    ids = list(set(body.area_ids))  # 去重
+    deleted = 0
+    for area_id in ids:
+        area = db.query(Area).get(area_id)
+        if not area:
+            continue
+        _assert_owner(area, user)
+        _delete_area_recursive(area, db)
+        deleted += 1
+    db.commit()
+    return {"ok": True, "deleted_count": deleted}
+
+
+@router.patch("/{area_id}/pin")
+def toggle_pin_area(area_id: int, db: Session = Depends(get_db),
+                    user: User = Depends(get_current_user)):
+    """切换 Pin 置顶状态"""
+    area = db.query(Area).get(area_id)
+    if not area:
+        raise HTTPException(404, "学习领域不存在")
+    _assert_owner(area, user)
+    area.is_pinned = 0 if area.is_pinned else 1
+    db.commit()
+    db.refresh(area)
+    return area.to_dict()
+
+
+@router.post("/{area_id}/promote")
+def promote_subarea(area_id: int, db: Session = Depends(get_db),
+                    user: User = Depends(get_current_user)):
+    """将子领域提升为顶级领域（取消父级关联）"""
+    area = db.query(Area).get(area_id)
+    if not area:
+        raise HTTPException(404, "学习领域不存在")
+    _assert_owner(area, user)
+    if area.parent_id is None:
+        raise HTTPException(400, "该领域已经是顶级领域，无需提升")
+    
+    area.parent_id = None
+    db.commit()
+    db.refresh(area)
+    return area.to_dict()
 
 
 @router.get("/{area_id}/siblings")
@@ -175,8 +233,16 @@ async def examine_area(area_id: int, db: Session = Depends(get_db),
             }
         )
 
+    # 创建 Langfuse handler（可选）
+    langfuse_handler = create_langfuse_handler(
+        user_id=user.id,
+        session_id=f"examine:{area_id}",
+        tags=[f"area:{area_id}", "examine"],
+        trace_name="examine",
+    )
+
     # 交给 agent 驱动审查流程
-    result = await run_examine_agent(area_id, area.name)
+    result = await run_examine_agent(area_id, area.name, langfuse_handler=langfuse_handler)
 
     if not result.get("analysis"):
         raise HTTPException(500, f"审查失败：{result.get('agent_reply', '未知错误')}")
@@ -214,9 +280,17 @@ async def examine_area_stream(area_id: int, db: Session = Depends(get_db),
     queue: asyncio.Queue = asyncio.Queue()
     callback_handler = StreamingCallbackHandler(queue)
 
+    # 创建 Langfuse handler（可选）
+    langfuse_handler = create_langfuse_handler(
+        user_id=user.id,
+        session_id=f"examine:{area_id}",
+        tags=[f"area:{area_id}", "examine_stream"],
+        trace_name="examine_stream",
+    )
+
     async def event_generator():
         agent_task = asyncio.create_task(
-            _run_streaming_examine(area_id, area.name, callback_handler, queue)
+            _run_streaming_examine(area_id, area.name, callback_handler, queue, langfuse_handler)
         )
 
         while True:
@@ -272,9 +346,10 @@ async def examine_area_stream(area_id: int, db: Session = Depends(get_db),
 
 async def _run_streaming_examine(area_id: int, area_name: str,
                                   callback_handler: StreamingCallbackHandler,
-                                  queue: asyncio.Queue) -> dict:
+                                  queue: asyncio.Queue,
+                                  langfuse_handler=None) -> dict:
     """执行流式审查，返回 analysis dict"""
-    result = await run_examine_agent_stream(area_id, area_name, callback_handler)
+    result = await run_examine_agent_stream(area_id, area_name, callback_handler, langfuse_handler=langfuse_handler)
     return result.get("analysis", {}) or {"error": "审查失败"}
 
 
@@ -311,10 +386,18 @@ async def generate_subareas_stream(area_id: int, db: Session = Depends(get_db),
     queue: asyncio.Queue = asyncio.Queue()
     callback_handler = StreamingCallbackHandler(queue)
 
+    # 创建 Langfuse handler（可选）
+    langfuse_handler = create_langfuse_handler(
+        user_id=user.id,
+        session_id=f"generate:{area_id}",
+        tags=[f"area:{area_id}", "generate_subareas"],
+        trace_name="generate_subareas",
+    )
+
     async def event_generator():
         agent_task = asyncio.create_task(
             _run_streaming_generate(area_id, area.name, area.description,
-                                     callback_handler, queue)
+                                     callback_handler, queue, langfuse_handler)
         )
 
         while True:
@@ -369,10 +452,11 @@ async def generate_subareas_stream(area_id: int, db: Session = Depends(get_db),
 
 async def _run_streaming_generate(area_id: int, area_name: str, area_description: str,
                                    callback_handler: StreamingCallbackHandler,
-                                   queue: asyncio.Queue) -> dict:
+                                   queue: asyncio.Queue,
+                                   langfuse_handler=None) -> dict:
     """执行流式生成子领域建议"""
     result = await run_generate_subareas_stream(
-        area_id, area_name, area_description, callback_handler
+        area_id, area_name, area_description, callback_handler, langfuse_handler=langfuse_handler
     )
     return result if result else {"error": "生成失败"}
 
@@ -407,5 +491,13 @@ async def polish_subareas(area_id: int, body: PolishSubareasRequest,
             }
         )
 
-    polished = await run_polish_subareas(body.sub_areas)
+    # 创建 Langfuse handler（可选）
+    langfuse_handler = create_langfuse_handler(
+        user_id=user.id,
+        session_id=f"polish:{area_id}",
+        tags=[f"area:{area_id}", "polish"],
+        trace_name="polish_subareas",
+    )
+
+    polished = await run_polish_subareas(body.sub_areas, langfuse_handler=langfuse_handler)
     return {"sub_areas": polished}

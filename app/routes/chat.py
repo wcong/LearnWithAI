@@ -13,6 +13,7 @@ from app.models import Area, ChatMessage, LearningSession, Skill, UsageLog, User
 from app.utils import check_daily_token_limit
 from app.agents.learning_agent import LearningAgent
 from app.agents.streaming_handler import StreamingCallbackHandler
+from app.agents.langfuse_helper import create_langfuse_handler
 
 router = APIRouter(prefix="/api/chat", tags=["Chat"])
 
@@ -104,8 +105,16 @@ async def chat(req: ChatRequest, db: Session = Depends(get_db),
             }
         )
 
+    # 创建 Langfuse handler（可选）
+    langfuse_handler = create_langfuse_handler(
+        user_id=user.id,
+        session_id=f"area_{area.id}",
+        tags=[f"area:{area.id}", "chat"],
+        trace_name="chat",
+    )
+
     # 调用 AI（使用最终消息）
-    reply, usage = await agent.ask(final_message)
+    reply, usage = await agent.chat(final_message, langfuse_handler=langfuse_handler)
 
     # 保存 AI 回复
     msg = ChatMessage(area_id=area.id, role="assistant", content=reply)
@@ -173,11 +182,19 @@ async def chat_stream(req: ChatRequest, db: Session = Depends(get_db),
     queue: asyncio.Queue = asyncio.Queue()
     callback_handler = StreamingCallbackHandler(queue)
 
+    # 创建 Langfuse handler（可选）
+    langfuse_handler = create_langfuse_handler(
+        user_id=user.id,
+        session_id=f"area_{area.id}",
+        tags=[f"area:{area.id}", "chat_stream"],
+        trace_name="chat_stream",
+    )
+
     async def event_generator():
         """异步生成器 - 消费队列 tokens 并生成 SSE 事件"""
         # 启动 agent 流式处理（不等待，让生成器与回调并行）
         agent_task = asyncio.create_task(
-            _run_streaming_chat(agent, final_message, callback_handler, queue, area.id)
+            _run_streaming_chat(agent, final_message, callback_handler, queue, area.id, langfuse_handler)
         )
 
         # 持续消费队列中的 tokens，直到 agent 完成
@@ -242,11 +259,12 @@ async def chat_stream(req: ChatRequest, db: Session = Depends(get_db),
 async def _run_streaming_chat(agent: LearningAgent, message: str,
                                callback_handler: StreamingCallbackHandler,
                                queue: asyncio.Queue,
-                               area_id: int) -> tuple:
+                               area_id: int,
+                               langfuse_handler=None) -> tuple:
     """执行流式聊天，返回 (reply, usage, message_id)"""
     from app.database import SessionLocal
 
-    reply, usage = await agent.chat_stream(message, callback_handler)
+    reply, usage = await agent.chat_stream(message, callback_handler, langfuse_handler=langfuse_handler)
 
     # 保存 AI 回复和用量到 DB
     db = SessionLocal()

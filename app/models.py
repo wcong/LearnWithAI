@@ -36,6 +36,7 @@ class Area(Base):
     description = Column(Text, default="")
     parent_id = Column(Integer, nullable=True)
     order = Column(Integer, default=0)
+    is_pinned = Column(Integer, default=0)  # 0=未置顶, 1=已置顶
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -46,6 +47,7 @@ class Area(Base):
             "description": self.description,
             "parent_id": self.parent_id,
             "order": self.order,
+            "is_pinned": bool(self.is_pinned),
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
@@ -260,4 +262,37 @@ class LoginHistory(Base):
             "user_agent": self.user_agent,
             "success": bool(self.success),
             "failure_reason": self.failure_reason,
+        }
+
+
+class StudyPlan(Base):
+    """学习计划（代办事项）"""
+    __tablename__ = "study_plans"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(Integer, nullable=False, index=True)
+    title = Column(String(300), nullable=False)
+    description = Column(Text, default="")
+    planned_at = Column(DateTime, nullable=False)        # 计划执行时间
+    area_id = Column(Integer, nullable=True)             # 关联的领域 ID
+    parent_id = Column(Integer, nullable=True)           # 父计划 ID（支持一层子计划）
+    is_completed = Column(Integer, default=0)            # 0=未完成, 1=已完成
+    completed_at = Column(DateTime, nullable=True)       # 完成时间戳
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "title": self.title,
+            "description": self.description,
+            "planned_at": (self.planned_at.isoformat() + "Z") if self.planned_at else None,
+            "area_id": self.area_id,
+            "parent_id": self.parent_id,
+            "is_completed": bool(self.is_completed),
+            "completed_at": (self.completed_at.isoformat() + "Z") if self.completed_at else None,
+            "created_at": (self.created_at.isoformat() + "Z") if self.created_at else None,
+            "updated_at": (self.updated_at.isoformat() + "Z") if self.updated_at else None,
+            "children": [],
         }

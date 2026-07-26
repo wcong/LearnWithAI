@@ -42,6 +42,18 @@ python-dotenv>=1.2.2
 # 用户认证
 python-jose[cryptography]>=3.5.0
 
+# LangGraph 状态图工作流
+langgraph>=0.2.0
+
+# MySQL 检查点后端（可选，设置 PLAN_CHECKPOINT_DB_URL 时使用 MySQL 替代 SQLite 存储 checkpoints）
+langgraph-checkpoint-mysql[aiomysql,pymysql]>=3.0.0
+
+# plan_checkpoints.db 检查点数据解码
+msgpack>=1.0.0
+
+# LLM 可观测性（Langfuse）
+langfuse>=2.82.0
+
 # 测试
 pytest>=7.0.0
 pytest-asyncio>=0.21.0

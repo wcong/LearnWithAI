@@ -67,6 +67,9 @@ def init_db():
     # 初始化系统默认配置
     _init_default_configs()
 
+    # 迁移：旧版 areas 表缺少 is_pinned 列
+    _add_column("areas", "is_pinned", "INTEGER DEFAULT 0")
+
     # 创建默认面试准备 Skill（仅首次创建）
     _create_default_skills()
 

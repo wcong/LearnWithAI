@@ -89,7 +89,11 @@ html, body {
     font-size: 15px;
     font-weight: 600;
     color: #fff;
+    text-decoration: none;
+    transition: opacity 0.2s ease;
 }
+.header-logo:hover { opacity: 0.85; }
+.header-logo:focus { outline: none; }
 .header-logo-img {
     width: 22px;
     height: 22px;

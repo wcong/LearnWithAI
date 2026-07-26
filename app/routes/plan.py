@@ -13,6 +13,7 @@ from app.models import User
 from app.utils import check_daily_token_limit
 from app.agents.plan_agent import run_plan_mode
 from app.agents.streaming_handler import StreamingCallbackHandler
+from app.agents.langfuse_helper import create_langfuse_handler
 
 router = APIRouter(prefix="/api/plan", tags=["Plan Mode"])
 
@@ -52,10 +53,18 @@ async def start_plan(req: StartPlanRequest, db: Session = Depends(get_db),
     queue: asyncio.Queue = asyncio.Queue()
     callback_handler = StreamingCallbackHandler(queue)
 
+    # 创建 Langfuse handler（可选）
+    langfuse_handler = create_langfuse_handler(
+        user_id=user.id,
+        session_id=f"plan:{domain}",
+        tags=[f"domain:{domain}", "plan"],
+        trace_name="plan_mode",
+    )
+
     async def event_generator():
         """异步生成器 — 消费队列事件并生成 SSE 流"""
         agent_task = asyncio.create_task(
-            _run_plan_async(domain, user.id, req.max_depth, callback_handler, queue)
+            _run_plan_async(domain, user.id, req.max_depth, callback_handler, queue, langfuse_handler)
         )
 
         while True:
@@ -125,7 +134,8 @@ def _format_sse(event_type: str, data) -> str:
 
 async def _run_plan_async(domain: str, user_id: int, max_depth: int,
                            callback_handler: StreamingCallbackHandler,
-                           queue: asyncio.Queue) -> dict:
+                           queue: asyncio.Queue,
+                           langfuse_handler=None) -> dict:
     """异步执行 Plan Mode，返回最终结果"""
     return await run_plan_mode(
         domain=domain,
@@ -133,4 +143,5 @@ async def _run_plan_async(domain: str, user_id: int, max_depth: int,
         queue=queue,
         callback_handler=callback_handler,
         max_depth=max_depth,
+        langfuse_handler=langfuse_handler,
     )

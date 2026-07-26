@@ -162,19 +162,29 @@ class LearningAgent:
             elif msg["role"] == "assistant":
                 self._history.append(AIMessage(content=msg["content"]))
 
-    async def chat(self, user_input: str, session_id: str | None = None):
+    async def chat(self, user_input: str, session_id: str | None = None,
+                   langfuse_handler=None):
         """发送用户消息并获取 AI 回复，返回 (reply, usage_dict)
 
         usage_dict 结构:
             {"model": str, "provider": str,
              "prompt_tokens": int, "completion_tokens": int, "total_tokens": int}
+
+        Args:
+            user_input: 用户输入内容
+            session_id: 会话标识（目前保留未用）
+            langfuse_handler: Langfuse CallbackHandler 实例，用于追踪（可选）
         """
         import time
         start = time.time()
 
+        config = None
+        if langfuse_handler:
+            config = {"callbacks": [langfuse_handler]}
+
         result = await self._agent.ainvoke({
             "messages": self._history + [HumanMessage(content=user_input)],
-        })
+        }, config=config)
 
         elapsed = int((time.time() - start) * 1000)
 
@@ -193,20 +203,34 @@ class LearningAgent:
 
     async def chat_stream(self, user_input: str,
                           callback_handler: 'StreamingCallbackHandler | None' = None,
-                          session_id: str | None = None):
+                          session_id: str | None = None,
+                          langfuse_handler=None):
         """流式聊天 - 通过 callback_handler 实时推送 tokens
 
         返回 (reply, usage_dict)
+
+        Args:
+            user_input: 用户输入内容
+            callback_handler: StreamingCallbackHandler 实例，用于 SSE 推送（可选）
+            session_id: 会话标识（目前保留未用）
+            langfuse_handler: Langfuse CallbackHandler 实例，用于追踪（可选）
         """
         from app.agents.streaming_handler import StreamingCallbackHandler
 
         import time
         start = time.time()
 
+        # 合并 Langfuse handler 和 StreamingCallbackHandler
+        callbacks = []
+        if callback_handler:
+            callbacks.append(callback_handler)
+        if langfuse_handler:
+            callbacks.append(langfuse_handler)
+
         # 创建流式 LLM（带回调）
         streaming_llm = _build_llm(
             streaming=True,
-            callbacks=[callback_handler] if callback_handler else [],
+            callbacks=callbacks if callbacks else None,
         )
 
         # 创建流式 Agent（共享 system prompt）
@@ -226,9 +250,13 @@ class LearningAgent:
         )
 
         # 运行 Agent
+        config = None
+        if langfuse_handler:
+            config = {"callbacks": [langfuse_handler]}
+
         result = await streaming_agent.ainvoke({
             "messages": self._history + [HumanMessage(content=user_input)],
-        })
+        }, config=config)
 
         elapsed = int((time.time() - start) * 1000)
 
@@ -607,9 +635,10 @@ def create_generate_tools() -> list[Tool]:
 
 
 async def run_generate_subareas_stream(area_id: int, area_name: str, area_description: str,
-                                        callback_handler) -> dict:
+                                        callback_handler, langfuse_handler=None) -> dict:
     """流式生成子领域建议 - 通过 callback_handler 实时推送 tokens"""
-    llm = _build_llm(streaming=True, callbacks=[callback_handler])
+    callbacks = [cb for cb in [callback_handler, langfuse_handler] if cb is not None]
+    llm = _build_llm(streaming=True, callbacks=callbacks if callbacks else None)
     tools = create_generate_tools()
 
     agent = create_agent(
@@ -667,7 +696,11 @@ async def run_generate_subareas_stream(area_id: int, area_name: str, area_descri
 注意：existing_sub_areas 由工具返回填充，你只需生成 generated_sub_areas。
 
 请开始执行。"""
-    result = await agent.ainvoke({"messages": [HumanMessage(content=task)]})
+    config = None
+    if langfuse_handler:
+        config = {"callbacks": [langfuse_handler]}
+
+    result = await agent.ainvoke({"messages": [HumanMessage(content=task)]}, config=config)
     messages = result.get("messages", [])
     last_msg = messages[-1] if messages else result
     reply = last_msg.content if hasattr(last_msg, "content") else str(last_msg)
@@ -693,9 +726,9 @@ async def run_generate_subareas_stream(area_id: int, area_name: str, area_descri
     }
 
 
-async def run_polish_subareas(sub_areas: list[dict]) -> list[dict]:
+async def run_polish_subareas(sub_areas: list[dict], langfuse_handler=None) -> list[dict]:
     """润色子领域描述：不改变 title 和数量，只优化 description"""
-    llm = _build_llm()
+    llm = _build_llm(callbacks=[langfuse_handler] if langfuse_handler else None)
 
     items_json = json.dumps(sub_areas, ensure_ascii=False, indent=2)
     prompt = f"""你是一个知识领域专家。请审查以下子领域列表，仅优化每个条目的 description（描述），使其更加准确、清晰和深入。
@@ -714,16 +747,20 @@ async def run_polish_subareas(sub_areas: list[dict]) -> list[dict]:
         {{"title": "标题（不变）", "description": "优化后的描述"}}
     ]
 }}"""
-    response = await llm.ainvoke([HumanMessage(content=prompt)])
+    config = None
+    if langfuse_handler:
+        config = {"callbacks": [langfuse_handler]}
+
+    response = await llm.ainvoke([HumanMessage(content=prompt)], config=config)
     result = _parse_llm_json(response.content)
     if result and "sub_areas" in result:
         return result["sub_areas"]
     return sub_areas  # 解析失败则返回原列表
 
 
-async def run_examine_agent(area_id: int, area_name: str) -> dict:
+async def run_examine_agent(area_id: int, area_name: str, langfuse_handler=None) -> dict:
     """创建 agent 并运行审查流程"""
-    llm = _build_llm()
+    llm = _build_llm(callbacks=[langfuse_handler] if langfuse_handler else None)
     tools = create_examine_tools()
 
     agent = create_agent(
@@ -748,7 +785,11 @@ async def run_examine_agent(area_id: int, area_name: str) -> dict:
 告诉我分析完成的情况：生成了多少个子领域的分析，以及父领域的分析摘要。
 
 请开始执行。"""
-    result = await agent.ainvoke({"messages": [HumanMessage(content=task)]})
+    config = None
+    if langfuse_handler:
+        config = {"callbacks": [langfuse_handler]}
+
+    result = await agent.ainvoke({"messages": [HumanMessage(content=task)]}, config=config)
     messages = result.get("messages", [])
     last_msg = messages[-1] if messages else result
     reply = last_msg.content if hasattr(last_msg, "content") else str(last_msg)
@@ -768,9 +809,10 @@ async def run_examine_agent(area_id: int, area_name: str) -> dict:
 
 
 async def run_examine_agent_stream(area_id: int, area_name: str,
-                                    callback_handler) -> dict:
+                                    callback_handler, langfuse_handler=None) -> dict:
     """流式审查 - 通过 callback_handler 实时推送 tokens"""
-    llm = _build_llm(streaming=True, callbacks=[callback_handler])
+    callbacks = [cb for cb in [callback_handler, langfuse_handler] if cb is not None]
+    llm = _build_llm(streaming=True, callbacks=callbacks if callbacks else None)
     tools = create_examine_tools()
 
     agent = create_agent(
@@ -795,7 +837,11 @@ async def run_examine_agent_stream(area_id: int, area_name: str,
 告诉我分析完成的情况：生成了多少个子领域的分析，以及父领域的分析摘要。
 
 请开始执行。"""
-    result = await agent.ainvoke({"messages": [HumanMessage(content=task)]})
+    config = None
+    if langfuse_handler:
+        config = {"callbacks": [langfuse_handler]}
+
+    result = await agent.ainvoke({"messages": [HumanMessage(content=task)]}, config=config)
     messages = result.get("messages", [])
     last_msg = messages[-1] if messages else result
     reply = last_msg.content if hasattr(last_msg, "content") else str(last_msg)

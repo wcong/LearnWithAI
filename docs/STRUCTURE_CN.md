@@ -39,7 +39,7 @@ LearnWithAI/
 │   │   └── admin.py              # 管理员统计面板
 │   │
 │   └── static/                   # 前端文件
-│       ├── home.html             # 首页（导航卡片）
+│       ├── index.html            # 首页（导航卡片）
 │       ├── domain.html           # 领域页（三栏布局）
 │       ├── notes.html            # 笔记页（两栏布局）
 │       ├── plan.html             # Plan Mode 页面
@@ -96,7 +96,7 @@ LearnWithAI/
 4. 挂载 `/static` 静态文件目录
 5. 注册所有 API 路由
 6. 提供前端页面重定向路由：
-   - `/` → `home.html`
+   - `/` → `index.html`
    - `/domain` → `domain.html`
    - `/notes` → `notes.html`
    - `/plan` → `plan.html`
@@ -268,7 +268,7 @@ LangChain 回调处理器，捕捉实时 Token 输出并推入 `asyncio.Queue` �
 
 | 页面 | 路径 | 说明 |
 |------|------|------|
-| **首页** | `/static/home.html` | 所有功能导航卡片 |
+| **首页** | `/static/index.html` | 所有功能导航卡片 |
 | **领域** | `/static/domain.html` | 三栏布局：知识树（左）、聊天（中）、工具面板（右） |
 | **笔记** | `/static/notes.html` | 两栏布局：领域树（左）、Quill 富文本编辑器（右） |
 | **计划** | `/static/plan.html` | 单页：输入领域 → 实时 SSE 探索进度 |
