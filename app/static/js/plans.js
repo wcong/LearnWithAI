@@ -9,6 +9,8 @@ let _editingParentId = null;
 let _deletingId = null;
 let _allPlans = [];
 let _allAreas = [];
+let _notifiedPlanIds = new Set();     // 已通知过的计划 ID，避免重复提醒
+let _notifyInterval = null;           // 定时检查的句柄
 
 // ── API 辅助 ─────────────────────────────────────────────
 async function api(path, opts = {}) {
@@ -42,6 +44,9 @@ function logout() {
     localStorage.removeItem('user');
     document.getElementById('authPage').style.display = 'flex';
     document.getElementById('appPage').style.display = 'none';
+    // 退出登录时停止浏览器提醒
+    stopNotifications();
+    _notifiedPlanIds.clear();
 }
 
 const authPage = document.getElementById('authPage');
@@ -215,6 +220,7 @@ function showApp() {
     appPage.style.display = 'flex';
     document.getElementById('userBadge').textContent = currentUser ? currentUser.username : '';
     loadAll();
+    initNotifications();
 }
 
 function init() {
@@ -239,6 +245,8 @@ async function loadPlans() {
     try {
         _allPlans = await api('/plans');
         renderPlans(_allPlans);
+        // 重新加载后清理不再需要的通知记录
+        _cleanupNotifiedIds();
     } catch (err) {
         document.getElementById('plansList').innerHTML =
             `<div class="loading-text">⚠️ 加载失败：${escHtml(err.message)}</div>`;
@@ -641,6 +649,175 @@ function formatDayLabel(dateStr) {
     const month = d.getMonth() + 1;
     const day = d.getDate();
     return `${month}月${day}日`;
+}
+
+// ============================================================
+//  浏览器提醒功能（定时检查即将到期的计划）
+// ============================================================
+
+const ALARM_ADVANCE_MINUTES = 15;
+const ALARM_CHECK_INTERVAL_MS = 30000;
+
+function initNotifications() {
+    if (!('Notification' in window)) return;
+    const btn = document.getElementById('notifBtn');
+    if (!btn) return;
+
+    // 更新铃铛按钮状态（但不自动弹权限请求）
+    updateNotifBtnUI();
+
+    // 如果已授予权限，直接启动定时器
+    if (Notification.permission === 'granted') {
+        startNotifyTimer();
+    } else {
+        // 未授予则停止定时器
+        stopNotifications();
+    }
+
+    // 绑定点击事件（避免重复绑定）
+    btn.removeEventListener('click', toggleNotification);
+    btn.addEventListener('click', toggleNotification);
+
+    // 绑定引导弹窗关闭
+    document.getElementById('btnCloseNotifGuide').addEventListener('click', closeNotifGuide);
+    document.getElementById('notifGuideOverlay').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeNotifGuide();
+    });
+}
+
+function updateNotifBtnUI() {
+    const btn = document.getElementById('notifBtn');
+    if (!btn) return;
+    btn.classList.remove('active', 'denied');
+    switch (Notification.permission) {
+        case 'granted':
+            btn.textContent = '🔔';
+            btn.classList.add('active');
+            btn.title = '浏览器提醒已开启（点击关闭）';
+            break;
+        case 'denied':
+            btn.textContent = '🚫';
+            btn.classList.add('denied');
+            btn.title = '浏览器提醒已被屏蔽（点击查看如何开启）';
+            break;
+        default:
+            btn.textContent = '🔕';
+            btn.title = '点击开启浏览器提醒';
+            break;
+    }
+}
+
+function toggleNotification() {
+    if (!('Notification' in window)) { alert('当前浏览器不支持通知功能'); return; }
+
+    if (Notification.permission === 'granted') {
+        // 已开启 → 关闭
+        stopNotifications();
+        Notification.permission = 'default'; // 无法真正撤销，只是停止定时器
+        updateNotifBtnUI();
+        return;
+    }
+
+    if (Notification.permission === 'denied') {
+        // 被屏蔽 → 显示引导
+        showNotificationGuide();
+        return;
+    }
+
+    // default → 请求权限
+    Notification.requestPermission().then(perm => {
+        updateNotifBtnUI();
+        if (perm === 'granted') {
+            startNotifyTimer();
+            // 立即检查一次
+            setTimeout(checkPlansForNotifications, 500);
+        } else if (perm === 'denied') {
+            showNotificationGuide();
+        }
+    }).catch(() => {
+        // 用户多次忽略导致浏览器自动屏蔽 → 显示引导
+        updateNotifBtnUI();
+        showNotificationGuide();
+    });
+}
+
+function startNotifyTimer() {
+    stopNotifications();
+    _notifyInterval = setInterval(checkPlansForNotifications, ALARM_CHECK_INTERVAL_MS);
+    setTimeout(checkPlansForNotifications, 1000);
+}
+
+function stopNotifications() {
+    if (_notifyInterval) {
+        clearInterval(_notifyInterval);
+        _notifyInterval = null;
+    }
+    updateNotifBtnUI();
+}
+
+function showNotificationGuide() {
+    document.getElementById('notifGuideOverlay').classList.add('active');
+}
+
+function closeNotifGuide() {
+    document.getElementById('notifGuideOverlay').classList.remove('active');
+}
+
+function checkPlansForNotifications() {
+    if (document.hidden) return;
+    if (!_allPlans || _allPlans.length === 0) return;
+    if (Notification.permission !== 'granted') return;
+
+    const now = new Date();
+    const windowMs = ALARM_ADVANCE_MINUTES * 60 * 1000;
+
+    _allPlans.forEach(p => {
+        checkSinglePlan(p, now, windowMs);
+        if (p.children) p.children.forEach(c => checkSinglePlan(c, now, windowMs));
+    });
+
+    _cleanupNotifiedIds();
+}
+
+function checkSinglePlan(plan, now, windowMs) {
+    if (plan.is_completed || !plan.planned_at) return;
+    if (_notifiedPlanIds.has(plan.id)) return;
+
+    const diff = new Date(plan.planned_at).getTime() - now.getTime();
+    if (diff <= 0 || diff > windowMs) return;
+
+    _notifiedPlanIds.add(plan.id);
+    const body = diff <= 60000
+        ? `「${plan.title}」即将开始！`
+        : `「${plan.title}」将在 ${Math.ceil(diff / 60000)} 分钟后开始`;
+
+    try {
+        const notif = new Notification('📚 学习计划提醒', {
+            body,
+            icon: '/static/images/logo_180.png',
+            tag: 'study-plan-' + plan.id,
+            requireInteraction: true,
+        });
+        notif.onclick = () => { window.focus(); notif.close(); };
+    } catch (e) {
+        console.warn('通知失败:', e);
+    }
+}
+
+function _cleanupNotifiedIds() {
+    const now = new Date();
+    const toRemove = [];
+    _allPlans.forEach(p => {
+        if (p.is_completed || !p.planned_at) toRemove.push(p.id);
+        else if (new Date(p.planned_at).getTime() < now.getTime()) toRemove.push(p.id);
+        if (p.children) {
+            p.children.forEach(c => {
+                if (c.is_completed || !c.planned_at) toRemove.push(c.id);
+                else if (new Date(c.planned_at).getTime() < now.getTime()) toRemove.push(c.id);
+            });
+        }
+    });
+    toRemove.forEach(id => _notifiedPlanIds.delete(id));
 }
 
 // ============================================================

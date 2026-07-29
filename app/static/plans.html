@@ -79,6 +79,7 @@
             <a href="/plan" class="nav-link" data-page="plan">💡 <span class="nav-icon-text">AI 规划</span><span class="nav-badge">实验</span></a>
         </nav>
         <div class="header-right">
+            <button class="notif-btn" id="notifBtn" title="浏览器提醒设置">🔕</button>
             <span class="user-badge" id="userBadge"></span>
             <button class="logout-btn" id="logoutBtn" title="退出登录">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -190,6 +191,18 @@
                 <button class="btn-danger" id="btnDeleteConfirm">删除</button>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- ====== 通知引导弹窗 ====== -->
+<div class="notif-guide-overlay" id="notifGuideOverlay">
+    <div class="notif-guide-box">
+        <div class="notif-guide-title">🔔 开启浏览器提醒</div>
+        <div class="notif-guide-step">1. 点击地址栏左侧的 <code>🔒</code> 或 <code>ℹ️</code> 图标</div>
+        <div class="notif-guide-step">2. 找到 <strong>"通知"</strong> 或 <strong>"Notification"</strong> 选项</div>
+        <div class="notif-guide-step">3. 将其改为 <strong>"允许"</strong></div>
+        <div class="notif-guide-step" style="margin-top:10px;color:#8E8E93;">之后计划到期前 15 分钟会自动弹出提醒</div>
+        <button class="notif-guide-close" id="btnCloseNotifGuide">知道了</button>
     </div>
 </div>
 

@@ -77,6 +77,100 @@ body {
     white-space: nowrap;
 }
 
+/* ---------- 通知铃铛按钮 ---------- */
+.notif-btn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.6);
+    transition: all 0.2s;
+    padding: 0;
+    line-height: 1;
+    position: relative;
+}
+.notif-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+.notif-btn.active {
+    color: #34C759;
+    background: rgba(52, 199, 89, 0.15);
+    border-color: rgba(52, 199, 89, 0.3);
+}
+.notif-btn.denied {
+    color: #FF3B30;
+    background: rgba(255, 59, 48, 0.12);
+    border-color: rgba(255, 59, 48, 0.25);
+}
+
+/* ---------- 通知引导弹窗 ---------- */
+.notif-guide-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+    backdrop-filter: blur(2px);
+}
+.notif-guide-overlay.active {
+    display: flex;
+}
+.notif-guide-box {
+    background: #fff;
+    border-radius: 16px;
+    width: 420px;
+    max-width: 90vw;
+    padding: 28px 24px 24px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    animation: modalIn 0.2s ease;
+}
+.notif-guide-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #000;
+    margin-bottom: 12px;
+}
+.notif-guide-step {
+    font-size: 13px;
+    color: #3C3C43;
+    line-height: 1.6;
+    margin-bottom: 6px;
+    padding-left: 4px;
+}
+.notif-guide-step code {
+    background: #F2F2F7;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #007AFF;
+}
+.notif-guide-close {
+    display: block;
+    margin: 18px auto 0;
+    padding: 9px 28px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    border: 1px solid #E5E5EA;
+    background: #fff;
+    color: #3C3C43;
+    transition: all 0.15s;
+}
+.notif-guide-close:hover {
+    background: #F2F2F7;
+}
+
 /* ---------- Auth 登录页（共用 style.css 风格） ---------- */
 .auth-page {
     display: flex;
